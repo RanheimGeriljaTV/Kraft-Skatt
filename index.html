@@ -1,27 +1,41 @@
 <!doctype html>
 <html lang="no">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lønn og skatt – Ranheim Kraft</title>
-  <meta name="description" content="Verktøy for lønn og skatt fra Ranheim Kraft.">
-  <meta name="theme-color" content="#08080a">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;700&family=Syne:wght@600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-  <header class="topp">
-    <a class="tilbake" href="../">← Ranheim Kraft</a>
-  </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#08080a" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Lønn, skatt og feriepenger 2026 – kalkulator | Ranheim Kraft</title>
+    <meta
+      name="description"
+      content="Gratis kalkulator for lønn, skatt, rentefradrag og feriepenger 2026. Se netto utbetalt hver måned, i juni og i desember. Alt regnes ut i nettleseren – ingen tall sendes noe sted."
+    />
+    <link rel="canonical" href="https://ranheimkraft.no/skatt/" />
+    <link rel="icon" type="image/x-icon" href="./polarICON.ico" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
 
-  <main class="innhold">
-    <p class="etikett">Ranheim Kraft · verktøy</p>
-    <h1>Lønn og skatt</h1>
-    <p class="ingress">Kommer snart.</p>
-  </main>
-
-  <script src="js/app.js" defer></script>
-</body>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Ranheim Kraft" />
+    <meta property="og:locale" content="nb_NO" />
+    <meta property="og:title" content="Lønn, skatt og feriepenger 2026" />
+    <meta
+      property="og:description"
+      content="Netto lønn, skattetrekk, rentefradrag og feriepenger – regnet ut privat i nettleseren."
+    />
+    <meta property="og:url" content="https://ranheimkraft.no/skatt/" />
+    <meta property="og:image" content="https://ranheimkraft.no/assets/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <p style="padding: 2rem; color: #e4e4e7; font-family: sans-serif">
+        Kalkulatoren trenger JavaScript. Slå det på i nettleseren for å bruke den.
+      </p>
+    </noscript>
+    <script type="module" src="./src/main.jsx"></script>
+  </body>
 </html>

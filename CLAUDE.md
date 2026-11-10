@@ -4,7 +4,7 @@ Disse reglene gjelder for alt arbeid i dette repoet, både for mennesker og AI-a
 
 - **Repo:** `RanheimGeriljaTV/Kraft-Skatt`
 - **Skal ligge på:** `https://ranheimkraft.no/skatt/`
-- **Type:** statisk HTML/CSS/JS
+- **Type:** Vite-app (React + Tailwind CSS + Lucide React, JavaScript)
 
 ## 0. Første økt: sett opp prosjektet
 
@@ -64,3 +64,9 @@ Er dette en ny mappe, gjør dette før noe annet (og hopp over det som allerede 
 - Bruk [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `chore:`. Ta med versjonen når en ny slippes, f.eks. `feat: nedtellingsklokke (v1.2.0)`.
 - Kontroller alltid `git status` før commit.
 - Linjeskift er LF (`.gitattributes`). Bilder og fonter er merket som binære.
+
+## 6. Skattesatser
+
+- Alle satser ligger samlet i `src/utils/satser.js`. Ingen skattetall skal hardkodes andre steder.
+- Når et nytt inntektsår starter: oppdater `AAR` og alle satsene fra regjeringen.no («Skattesatser ÅÅÅÅ») og Skatteetaten, juster testene i `src/utils/taxCalculator.test.js`, og slipp en ny MINOR-versjon.
+- Oppgi kilde og dato i kommentaren øverst i `satser.js`.

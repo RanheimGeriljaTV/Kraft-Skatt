@@ -1,0 +1,88 @@
+@import 'tailwindcss';
+
+/*
+ * Merkevaretokens – felles med ranheimkraft.no.
+ * Fontene ligger i bygget (@fontsource), så siden henter ingenting fra tredjeparter.
+ */
+@theme {
+  --font-syne: 'Syne', sans-serif;
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-brand-dark: #08080a;
+  --color-brand-navy: #0d111a;
+
+  /* Aksentfarge for Kraft-Skatt (Quiz = amber, QR = cyan, Tabell = sky, Events = emerald, Fryer = orange) */
+  --color-accent: var(--color-violet-400);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    color-scheme: dark;
+  }
+
+  body {
+    @apply min-h-screen overflow-x-hidden bg-brand-dark font-sans text-zinc-200 antialiased;
+  }
+
+  a,
+  button,
+  summary {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+/* Glidebrytere: stor trykkflate (44 px) med tynt spor. */
+.glider {
+  appearance: none;
+  height: 44px;
+  background: transparent;
+  cursor: pointer;
+  accent-color: var(--color-accent);
+}
+.glider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--color-zinc-700);
+}
+.glider::-moz-range-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--color-zinc-700);
+}
+.glider::-webkit-slider-thumb {
+  appearance: none;
+  margin-top: -9px;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  border: 3px solid var(--color-brand-dark);
+}
+.glider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  border: 3px solid var(--color-brand-dark);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
