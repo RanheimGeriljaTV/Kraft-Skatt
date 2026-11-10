@@ -472,6 +472,9 @@ function GjeldKort({ valg, oppdater, resultat }) {
 // ---------------------------------------------------------------------------
 function SkattKort({ valg, oppdater, resultat }) {
   const anbefalt = resultat.fradrag.anbefaltTabell;
+  const uforeMedLonn = resultat.ufore.aktiv && resultat.lonn.arbeidsinntekt > 0;
+  // Riktig bikort-prosent: marginalskatten på lønna når Nav trekker skatten på trygda.
+  const anbefaltProsent = Math.ceil(resultat.fradrag.anbefaltBikort * 1000) / 10;
 
   return (
     <Kort steg="Steg D" tittel="Skattetrekk og ferie" ikon={SunMedium}>
@@ -493,13 +496,29 @@ function SkattKort({ valg, oppdater, resultat }) {
             <Sparkles size={16} className="text-accent" aria-hidden="true" />
             Trekket som gir null i restskatt
           </p>
-          <p className="mt-1">
-            Regner ut skatten med alle fradragene dine og fordeler den over 10,5 måneder. Det
-            tilsvarer omtrent <strong className="text-accent">tabell {anbefalt}</strong>.
-          </p>
+          {uforeMedLonn ? (
+            <p className="mt-1">
+              Nav trekker skatten på uføretrygden, og arbeidsgiveren trekker resten. Det tilsvarer
+              omtrent <strong className="text-accent">tabell {anbefalt}</strong> hos Nav og{' '}
+              <strong className="text-accent">{tall(anbefaltProsent, 1)} %</strong> prosenttrekk
+              (bikort) hos arbeidsgiveren.
+            </p>
+          ) : (
+            <p className="mt-1">
+              Regner ut skatten med alle fradragene dine og fordeler den over 10,5 måneder. Det
+              tilsvarer omtrent <strong className="text-accent">tabell {anbefalt}</strong>
+              {resultat.ufore.aktiv ? ' hos Nav' : ''}.
+            </p>
+          )}
           <button
             type="button"
-            onClick={() => oppdater({ skattemodus: 'tabell', tabellnummer: anbefalt })}
+            onClick={() =>
+              oppdater({
+                skattemodus: 'tabell',
+                tabellnummer: anbefalt,
+                ...(uforeMedLonn ? { prosent: anbefaltProsent } : {}),
+              })
+            }
             className="mt-1 inline-flex min-h-11 items-center gap-1.5 font-semibold text-accent underline-offset-4 hover:underline"
           >
             Sammenlign med tabell {anbefalt}
@@ -512,10 +531,22 @@ function SkattKort({ valg, oppdater, resultat }) {
         <TabellVelger valg={valg} oppdater={oppdater} anbefalt={anbefalt} />
       )}
 
+      {valg.skattemodus === 'tabell' && uforeMedLonn && (
+        <Tallfelt
+          etikett="Prosenttrekk hos arbeidsgiveren (bikort)"
+          verdi={valg.prosent}
+          desimaler={1}
+          maks={100}
+          suffiks="%"
+          onChange={(prosent) => oppdater({ prosent })}
+          hint={`Tabellen gjelder uføretrygden fra Nav. For at året skal gå i null bør arbeidsgiveren trekke ca. ${tall(anbefaltProsent, 1)} %.`}
+        />
+      )}
+
       {valg.skattemodus === 'prosent' && (
         <div className="space-y-3">
           <Tallfelt
-            etikett="Prosenttrekk"
+            etikett={resultat.ufore.aktiv ? 'Prosenttrekk (Nav og arbeidsgiver)' : 'Prosenttrekk'}
             verdi={valg.prosent}
             desimaler={1}
             maks={100}
@@ -539,10 +570,10 @@ function SkattKort({ valg, oppdater, resultat }) {
         </div>
       )}
 
-      {valg.ufore && valg.skattemodus !== 'smart' && (
+      {resultat.ufore.aktiv && (
         <Hint>
-          Med uføretrygd og lønn trekker vanligvis Nav etter tabell og arbeidsgiveren med prosent.
-          Kalkulatoren viser samlet trekk for begge.
+          Uføretrygd har ikke feriepenger, men Nav trekker ikke skatt av den i juni og trekker halv
+          skatt i desember. Arbeidsgiveren trekker prosent av all lønn hele året.
         </Hint>
       )}
 

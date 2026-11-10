@@ -231,13 +231,49 @@ describe('uføretrygd', () => {
     expect(u.reduksjon).toBeCloseTo((400_000 - 200_000 - G) * 0.66, 5);
   });
 
-  it('uføretrygd og lønn skattes samlet, og uføretrygda er trekkfri i juni', () => {
+  it('uføretrygd og lønn skattes samlet', () => {
     const r = beregn({ ...ufor, lonnBasis: 'maaned', belop: 10_000, stilling: 30 });
     expect(r.lonn.personinntekt).toBeCloseTo(r.lonn.arbeidsinntekt + 339_900, 5);
     expect(r.ufore.maaned).toBeCloseTo(339_900 / 12, 5);
+    expect(Math.abs(r.oppgjor)).toBeLessThan(1);
+  });
+
+  it('Nav: nullskatt på uføretrygd i juni og halv skatt i desember', () => {
+    const r = beregn({ ...ufor, lonnBasis: 'maaned', belop: 10_000, stilling: 30 });
+    const t = r.trekk;
+    expect(t.modus).toBe('ufore');
+    expect(t.juni.trekkUfore).toBe(0);
+    expect(t.desember.trekkUfore).toBeCloseTo(t.navMaanedlig / 2, 5);
+    // Nav trekker skatten på uføretrygden alene over 10,5 måneder
+    const skattUfore = beregn({ ...ufor, belop: 0 }).skatt.total;
+    expect(t.navMaanedlig * 10.5).toBeCloseTo(skattUfore, 5);
+  });
+
+  it('arbeidsgiveren trekker marginalskatten som prosent av all lønn, også i juni og desember', () => {
+    const r = beregn({ ...ufor, lonnBasis: 'maaned', belop: 10_000, stilling: 30 });
+    const t = r.trekk;
+    // 22 % + 7,6 % trygdeavgift + 4 % trinn 2 (minstefradraget er allerede fullt)
+    expect(t.arbeidsgiverSats).toBeCloseTo(0.336, 5);
+    expect(t.vanligDeler.lonn).toBeCloseTo(10_000 * 0.336, 5);
+    expect(t.desember.trekkLonn).toBeCloseTo(10_000 * 0.336, 5);
+    const juniLonn = 10_000 - r.lonn.ferietrekk + r.lonn.feriepenger;
+    expect(t.juni.trekkLonn).toBeCloseTo(juniLonn * 0.336, 5);
+  });
+
+  it('bare uføretrygd (ingen jobb) gir ingen trekk hos arbeidsgiver', () => {
+    const r = beregn({ ...ufor, belop: 0 });
+    expect(r.trekk.arbeidsgiverSats).toBe(0);
     expect(r.trekk.juni.trekk).toBe(0);
     expect(Math.abs(r.oppgjor)).toBeLessThan(1);
-    expect(r.netto.vanligMaaned).toBeCloseTo(10_000 + 339_900 / 12 - r.skatt.total / 10.5, 5);
+  });
+
+  it('tabellmodus: Nav bruker tabellen på uføretrygden, arbeidsgiveren prosentsatsen', () => {
+    const r = beregn({ ...ufor, belop: 10_000, stilling: 30, skattemodus: 'tabell', prosent: 35 });
+    expect(r.trekk.arbeidsgiverSats).toBeCloseTo(0.35, 5);
+    expect(r.trekk.navMaanedlig * 10.5).toBeCloseTo(
+      beregnSkatt({ personinntekt: 339_900 }).total,
+      5,
+    );
   });
 
   it('netto per arbeidstime tar hensyn til skatt og redusert uføretrygd', () => {

@@ -306,8 +306,20 @@ export function beregn(innstillinger) {
     uforeMaaned,
     lonnstype: v.lonnstype,
   };
+  const skattBareUfore = ufore.aktiv
+    ? beregnSkatt({ personinntekt: ufore.utbetalt, ...alleFradrag }).total
+    : 0;
   let trekk;
-  if (v.skattemodus === 'prosent') {
+  if (ufore.aktiv) {
+    trekk = uforeTrekk(v, {
+      ...grunnlag,
+      arbeidsinntekt: lonn.personinntekt,
+      uforeAar: ufore.utbetalt,
+      skattTotal: skatt.total,
+      skattBareUfore,
+      personinntekt,
+    });
+  } else if (v.skattemodus === 'prosent') {
     trekk = prosenttrekk(v, { ...grunnlag, personinntekt });
   } else {
     let maanedligTrekk = skatt.total / 10.5;
@@ -354,6 +366,11 @@ export function beregn(innstillinger) {
       fradragsbesparelse,
       fradragEkvivalent,
       anbefaltTabell: anbefaltTabell(fradragEkvivalent),
+      // Prosenttrekk hos arbeidsgiveren når Nav trekker skatten på uføretrygden alene.
+      anbefaltBikort:
+        ufore.aktiv && lonn.personinntekt > 0
+          ? (skatt.total - skattBareUfore) / lonn.personinntekt
+          : 0,
     },
     skatt: {
       ...skatt,
@@ -421,6 +438,102 @@ function tabellAarshjul({
       netto: vanligBrutto - desemberTrekk,
     },
     sumAar: maanedligTrekk * 10 + juniTrekk + desemberTrekk,
+  };
+}
+
+/**
+ * Uføretrygd + lønn: to utbetalere med hvert sitt trekk.
+ * - Nav trekker av uføretrygden i 10,5 måneder: nullskatt i juni og halv skatt i desember
+ *   (12 måneder hvis tabellen er en 12-månederstabell).
+ * - Arbeidsgiveren trekker prosent (bikort) av all lønn, også feriepenger og i desember.
+ * Smart: Nav trekker skatten på uføretrygden alene, og arbeidsgiveren trekker resten, som er
+ * marginalskatten på lønna. Da går trekket opp i null ved skatteoppgjøret.
+ */
+function uforeTrekk(
+  v,
+  {
+    maanedslonn,
+    ferietrekk,
+    feriepenger,
+    uforeMaaned,
+    lonnstype,
+    arbeidsinntekt,
+    uforeAar,
+    skattTotal,
+    skattBareUfore,
+    personinntekt,
+  },
+) {
+  let navMaanedlig;
+  let navMaaneder = 10.5;
+  let arbeidsgiverSats;
+  let tabell = null;
+
+  if (v.skattemodus === 'smart') {
+    navMaanedlig = skattBareUfore / 10.5;
+    arbeidsgiverSats = arbeidsinntekt > 0 ? (skattTotal - skattBareUfore) / arbeidsinntekt : 0;
+  } else {
+    let sats = tall(v.prosent, 0, 100) / 100;
+    if (v.skattemodus === 'prosent' && v.frikort) {
+      const over = Math.max(0, personinntekt - SATSER.frikortGrense);
+      sats = personinntekt > 0 ? (over * SATSER.frikortTrekkOver) / personinntekt : 0;
+    }
+    arbeidsgiverSats = sats;
+    if (v.skattemodus === 'tabell') {
+      tabell = tolkTabell(v.tabellnummer);
+      const tabellSkatt = beregnSkatt({
+        personinntekt: uforeAar,
+        fradrag: tabell.fradrag,
+        tillegg: tabell.tillegg,
+        medTrygdeavgift: tabell.trygd,
+      });
+      navMaaneder = tabell.maaneder;
+      navMaanedlig = tabellSkatt.total / navMaaneder;
+    } else {
+      navMaanedlig = uforeMaaned * sats;
+    }
+  }
+
+  const tolv = navMaaneder === 12;
+  const navJuni = tolv ? navMaanedlig : 0;
+  const navDesember = tolv ? navMaanedlig : navMaanedlig / 2;
+
+  const lonnJuniBrutto = Math.max(0, maanedslonn - ferietrekk + feriepenger);
+  const agVanlig = maanedslonn * arbeidsgiverSats;
+  const agJuni = lonnJuniBrutto * arbeidsgiverSats;
+
+  const vanligBrutto = maanedslonn + uforeMaaned;
+  const juniBrutto = lonnJuniBrutto + uforeMaaned;
+  return {
+    modus: 'ufore',
+    skattemodus: v.skattemodus,
+    tabell,
+    navMaanedlig,
+    navMaaneder,
+    arbeidsgiverSats,
+    vanlig: navMaanedlig + agVanlig,
+    vanligBrutto,
+    vanligDeler: { lonn: agVanlig, ufore: navMaanedlig },
+    juni: {
+      lonn: maanedslonn,
+      ferietrekk,
+      feriepenger,
+      ufore: uforeMaaned,
+      trekk: agJuni + navJuni,
+      trekkLonn: agJuni,
+      trekkUfore: navJuni,
+      netto: juniBrutto - agJuni - navJuni,
+      lonnstype,
+    },
+    desember: {
+      lonn: maanedslonn,
+      ufore: uforeMaaned,
+      trekk: agVanlig + navDesember,
+      trekkLonn: agVanlig,
+      trekkUfore: navDesember,
+      netto: vanligBrutto - agVanlig - navDesember,
+    },
+    sumAar: navMaanedlig * 10 + navJuni + navDesember + arbeidsgiverSats * arbeidsinntekt,
   };
 }
 

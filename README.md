@@ -40,24 +40,24 @@ Nullstill» tømmer lagringen og setter alle felter tilbake.
 Alle satser ligger i [`src/utils/satser.js`](src/utils/satser.js), og selve motoren i
 [`src/utils/taxCalculator.js`](src/utils/taxCalculator.js).
 
-| Del                         | Regel                                                                                      |
-| --------------------------- | ------------------------------------------------------------------------------------------ |
-| Personinntekt               | Lønn minus ferietrekk, pluss feriepenger                                                   |
-| Minstefradrag               | 46 %, maks 95 700 kr                                                                       |
-| Personfradrag               | 114 540 kr                                                                                 |
-| Skatt på alminnelig inntekt | 22 % av personinntekt minus fradrag                                                        |
-| Trygdeavgift                | 7,6 % (ingen under 99 650 kr, deretter opptrapping på 25 %)                                |
-| Trinnskatt                  | 1,7 / 4,0 / 13,7 / 16,8 / 17,8 % fra 226 100 / 318 300 / 725 050 / 980 100 / 1 467 200 kr  |
-| Formuesskatt                | 1,0 % over 1 900 000 kr (1,1 % over 21,5 mill.)                                            |
-| Fagforening                 | Fradrag opptil 8 700 kr                                                                    |
-| BSU                         | 10 % skattefradrag av opptil 27 500 kr                                                     |
-| Reisefradrag                | 1,90 kr/km, minus 12 000 kr                                                                |
-| Trekk                       | Årsskatt / 10,5 måneder: juni trekkfri, halv skatt i desember                              |
-| Ferietrekk (fastlønn)       | Virkedager / 26 av månedslønna (5 uker = 30/26)                                            |
-| Feriepenger                 | 12 % / 10,2 % av lønna (etter ferietrekk), +2,3 % over 60 år opptil 6 G                    |
-| Uføretrygd                  | Skattes som lønn, trekkfri i juni, halvt trekk i desember                                  |
-| Bunnfradrag (uføre)         | Inntekt etter uførhet + fribeløp (1 G etter 2 år, ellers 0,4 G; snitt-G 2026 = 134 419 kr) |
-| Reduksjon (uføre)           | Reduksjonsprosent (maks 70 %) av arbeidsinntekt over bunnfradraget                         |
+| Del                         | Regel                                                                                                           |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Personinntekt               | Lønn minus ferietrekk, pluss feriepenger                                                                        |
+| Minstefradrag               | 46 %, maks 95 700 kr                                                                                            |
+| Personfradrag               | 114 540 kr                                                                                                      |
+| Skatt på alminnelig inntekt | 22 % av personinntekt minus fradrag                                                                             |
+| Trygdeavgift                | 7,6 % (ingen under 99 650 kr, deretter opptrapping på 25 %)                                                     |
+| Trinnskatt                  | 1,7 / 4,0 / 13,7 / 16,8 / 17,8 % fra 226 100 / 318 300 / 725 050 / 980 100 / 1 467 200 kr                       |
+| Formuesskatt                | 1,0 % over 1 900 000 kr (1,1 % over 21,5 mill.)                                                                 |
+| Fagforening                 | Fradrag opptil 8 700 kr                                                                                         |
+| BSU                         | 10 % skattefradrag av opptil 27 500 kr                                                                          |
+| Reisefradrag                | 1,90 kr/km, minus 12 000 kr                                                                                     |
+| Trekk                       | Årsskatt / 10,5 måneder: juni trekkfri, halv skatt i desember                                                   |
+| Ferietrekk (fastlønn)       | Virkedager / 26 av månedslønna (5 uker = 30/26)                                                                 |
+| Feriepenger                 | 12 % / 10,2 % av lønna (etter ferietrekk), +2,3 % over 60 år opptil 6 G                                         |
+| Uføretrygd                  | Skattes som lønn. Nav: nullskatt i juni, halv skatt i desember. Arbeidsgiver: prosenttrekk (bikort) av all lønn |
+| Bunnfradrag (uføre)         | Inntekt etter uførhet + fribeløp (1 G etter 2 år, ellers 0,4 G; snitt-G 2026 = 134 419 kr)                      |
+| Reduksjon (uføre)           | Reduksjonsprosent (maks 70 %) av arbeidsinntekt over bunnfradraget                                              |
 
 Forenklinger: beregningen gjelder en enslig lønnstaker utenfor tiltakssonen, uten
 pensjonsinntekt. Tabelltrekket er en tilnærming til Skatteetatens trekktabeller. Feriepengene

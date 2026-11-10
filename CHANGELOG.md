@@ -7,6 +7,20 @@ og prosjektet følger [Semantic Versioning](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-11
+
+### Endret
+
+- Uføretrygd og lønn har nå hvert sitt skattetrekk, slik det er i praksis. Nav trekker av
+  uføretrygden i 10,5 måneder: nullskatt i juni (uføretrygd har ikke feriepenger) og halv skatt
+  i desember. Arbeidsgiveren trekker prosent (bikort) av all lønn, også av feriepengene i juni
+  og fullt i desember. Før fikk lønna også nullskatt i juni og halv skatt i desember.
+- Årshjulet viser trekket fra Nav og fra arbeidsgiveren på hver sin linje, og skjuler
+  lønnslinjene når du bare har uføretrygd.
+- «Smart» anbefaler skattekort for uføre med jobb: tabell hos Nav og prosenttrekk hos
+  arbeidsgiveren (marginalskatten på lønna).
+- Med tabelltrekk og uføretrygd kan du skrive inn prosenttrekket hos arbeidsgiveren.
+
 ## [1.1.0] - 2026-11-11
 
 ### Lagt til
@@ -50,6 +64,7 @@ og prosjektet følger [Semantic Versioning](https://semver.org/lang/no/).
 - Workflow som tester, bygger og publiserer til `build`-grenen og GitHub Pages.
 - Prosjektoppsett med arbeidsregler (`CLAUDE.md`), `.gitignore` og `.gitattributes`.
 
-[Unreleased]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/releases/tag/v1.0.0
