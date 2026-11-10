@@ -12,7 +12,7 @@ function Rad({ navn, belop, sterk }) {
 }
 
 export default function TaxBreakdown({ resultat }) {
-  const { lonn, skatt, fradrag } = resultat;
+  const { lonn, skatt, fradrag, ufore } = resultat;
   const andre = fradrag.fagforening + fradrag.reisefradrag;
 
   return (
@@ -29,6 +29,7 @@ export default function TaxBreakdown({ resultat }) {
         <dl className="divide-y divide-white/5">
           <Rad navn="Lønn (etter ferietrekk)" belop={lonn.feriepengegrunnlag} />
           <Rad navn="Feriepenger" belop={lonn.feriepenger} />
+          {ufore.aktiv && <Rad navn="Uføretrygd etter reduksjon" belop={ufore.utbetalt} />}
           <Rad navn="Personinntekt" belop={lonn.personinntekt} sterk />
           <Rad
             navn={`− Minstefradrag (${sats(SATSER.minstefradragSats)})`}

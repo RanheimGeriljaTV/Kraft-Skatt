@@ -48,6 +48,18 @@ export const SATSER = {
   // Folketrygdens grunnbeløp per 1. januar 2026 (brukes for ekstra ferie over 60 år:
   // tilleggsferiepengene beregnes bare av grunnlag opptil 6 G).
   grunnbelop: 130_160,
+  // Gjennomsnittlig G for 2026 (130 160 kr til 30. april, 136 549 kr fra 1. mai).
+  // Brukes for årsbeløp i uføreberegningen. Kilde: regjeringen.no / Nav.
+  grunnbelopSnitt: 134_419,
+
+  // Uføretrygd (Nav, «Regelendringer for uføretrygd i 2026», oppdatert 17.09.2026).
+  // Bunnfradrag = inntekt etter uførhet (IEU) + fribeløp. Fribeløpet er 0,4 G de første
+  // 24 månedene og 1 G etter det (virkning fra 1.1.2026). Uføretrygden reduseres med
+  // reduksjonsprosenten av inntekt over bunnfradraget, maks 70 % fra 1.7.2026.
+  // Uføretrygd skattes som lønn, er trekkfri i juni og har halvt trekk i desember.
+  uforeFribelopG: { '1g': 1, '04g': 0.4 },
+  uforeReduksjonMaks: 70,
+  uforeMinsteYtelseEnsligG: 2.529,
 };
 
 // Ferieavtaler. Virkedager regnes mandag–lørdag (6 per uke), som i ferieloven.

@@ -5,7 +5,8 @@ import {
   beregn,
   beregnSkatt,
   formuesskatt,
-  fulltidsAarslonn,
+  aarslonnFraBelop,
+  beregnUfore,
   konverterBelop,
   minstefradrag,
   tolkTabell,
@@ -14,16 +15,22 @@ import {
 } from './taxCalculator.js';
 
 describe('lønn', () => {
-  it('regner fulltids årslønn fra time, måned og år', () => {
-    expect(fulltidsAarslonn(300, 'time', '37.5')).toBe(585_000);
-    expect(fulltidsAarslonn(300, 'time', '35.5')).toBe(553_800);
-    expect(fulltidsAarslonn(50_000, 'maaned')).toBe(600_000);
-    expect(fulltidsAarslonn(600_000, 'aar')).toBe(600_000);
+  it('månedslønn og årslønn er det du faktisk tjener, uansett stilling', () => {
+    expect(aarslonnFraBelop(10_000, 'maaned', 30)).toBe(120_000);
+    expect(aarslonnFraBelop(600_000, 'aar', 80)).toBe(600_000);
+  });
+
+  it('timelønn ganges med timene i stillingen', () => {
+    expect(aarslonnFraBelop(300, 'time', 100, '37.5')).toBe(585_000);
+    expect(aarslonnFraBelop(300, 'time', 100, '35.5')).toBe(553_800);
+    expect(aarslonnFraBelop(300, 'time', 50, '37.5')).toBe(292_500);
   });
 
   it('konverterer mellom faner uten å endre årslønna', () => {
     expect(konverterBelop(600_000, 'aar', 'maaned')).toBe(50_000);
-    expect(konverterBelop(50_000, 'maaned', 'time', '37.5')).toBeCloseTo(307.69, 2);
+    expect(konverterBelop(50_000, 'maaned', 'time', 100, '37.5')).toBeCloseTo(307.69, 2);
+    // 10 000 kr/mnd i 30 % stilling = 120 000 / 585 timer
+    expect(konverterBelop(10_000, 'maaned', 'time', 30, '37.5')).toBeCloseTo(205.13, 2);
   });
 });
 
@@ -170,9 +177,22 @@ describe('hele året', () => {
     expect(r.lonn.tilleggOver60).toBeCloseTo(6 * 130_160 * 0.023, 5);
   });
 
-  it('stillingsprosent skalerer lønna', () => {
-    const r = beregn({ ...grunn, stilling: 50 });
-    expect(r.lonn.maanedslonn).toBe(25_000);
+  it('stillingsprosent endrer ikke månedslønna, men timelønna', () => {
+    const r = beregn({ ...grunn, belop: 10_000, stilling: 30 });
+    expect(r.lonn.maanedslonn).toBe(10_000);
+    expect(r.lonn.timelonn).toBeCloseTo(205.13, 2);
+  });
+
+  it('fradrag øker netto per måned i smart-modus, men ikke med tabelltrekk', () => {
+    const uten = beregn(grunn);
+    const smart = beregn({ ...grunn, fagforening: 8_700 });
+    const tabell = beregn({ ...grunn, fagforening: 8_700, skattemodus: 'tabell' });
+    expect(smart.netto.vanligMaaned - uten.netto.vanligMaaned).toBeCloseTo(
+      (8_700 * 0.22) / 10.5,
+      5,
+    );
+    expect(tabell.netto.vanligMaaned).toBeCloseTo(uten.netto.vanligMaaned, 5);
+    expect(tabell.oppgjor).toBeCloseTo(8_700 * 0.22, 5);
   });
 
   it('håndterer null og ugyldige tall uten NaN', () => {
@@ -180,5 +200,65 @@ describe('hele året', () => {
     expect(r.netto.vanligMaaned).toBe(0);
     expect(r.skatt.effektiv).toBe(0);
     expect(Number.isNaN(r.netto.timelonn)).toBe(false);
+  });
+});
+
+describe('uføretrygd', () => {
+  const G = 134_419;
+  const ufor = { ufore: true, uforetrygd: 339_900, ieu: 0, reduksjonsprosent: 66 };
+
+  it('reduseres ikke når arbeidsinntekten er under bunnfradraget (1 G)', () => {
+    const u = beregnUfore({ ...ufor, fribelop: '1g' }, 120_000);
+    expect(u.bunnfradrag).toBe(G);
+    expect(u.reduksjon).toBe(0);
+    expect(u.utbetalt).toBe(339_900);
+  });
+
+  it('reduseres med reduksjonsprosenten av inntekt over bunnfradraget', () => {
+    const u = beregnUfore({ ...ufor, fribelop: '04g' }, 100_000);
+    expect(u.bunnfradrag).toBeCloseTo(0.4 * G, 5);
+    expect(u.reduksjon).toBeCloseTo((100_000 - 0.4 * G) * 0.66, 5);
+  });
+
+  it('reduksjonsprosenten er maks 70 %', () => {
+    const u = beregnUfore({ ...ufor, fribelop: '04g', reduksjonsprosent: 90 }, 100_000);
+    expect(u.reduksjonsprosent).toBe(70);
+  });
+
+  it('IEU legges til bunnfradraget ved gradert uføretrygd', () => {
+    const u = beregnUfore({ ...ufor, ieu: 200_000 }, 400_000);
+    expect(u.bunnfradrag).toBe(200_000 + G);
+    expect(u.reduksjon).toBeCloseTo((400_000 - 200_000 - G) * 0.66, 5);
+  });
+
+  it('uføretrygd og lønn skattes samlet, og uføretrygda er trekkfri i juni', () => {
+    const r = beregn({ ...ufor, lonnBasis: 'maaned', belop: 10_000, stilling: 30 });
+    expect(r.lonn.personinntekt).toBeCloseTo(r.lonn.arbeidsinntekt + 339_900, 5);
+    expect(r.ufore.maaned).toBeCloseTo(339_900 / 12, 5);
+    expect(r.trekk.juni.trekk).toBe(0);
+    expect(Math.abs(r.oppgjor)).toBeLessThan(1);
+    expect(r.netto.vanligMaaned).toBeCloseTo(10_000 + 339_900 / 12 - r.skatt.total / 10.5, 5);
+  });
+
+  it('netto per arbeidstime tar hensyn til skatt og redusert uføretrygd', () => {
+    const r = beregn({
+      ...ufor,
+      fribelop: '04g',
+      lonnBasis: 'maaned',
+      belop: 20_000,
+      stilling: 50,
+    });
+    expect(r.ufore.reduksjon).toBeGreaterThan(0);
+    expect(r.netto.jobbGevinst).toBeLessThan(r.lonn.arbeidsinntekt - r.ufore.reduksjon);
+    expect(r.netto.perArbeidstime).toBeCloseTo(r.netto.jobbGevinst / r.lonn.betalteTimer, 5);
+  });
+
+  it('utbetalingene summerer seg også med uføretrygd', () => {
+    for (const skattemodus of ['smart', 'tabell', 'prosent']) {
+      const r = beregn({ ...ufor, skattemodus, belop: 15_000, stilling: 40 });
+      const brutto =
+        11 * (r.lonn.maanedslonn + r.ufore.maaned) + r.trekk.juni.netto + r.trekk.juni.trekk;
+      expect(brutto).toBeCloseTo(r.lonn.personinntekt, 5);
+    }
   });
 });

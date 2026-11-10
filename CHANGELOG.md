@@ -7,6 +7,30 @@ og prosjektet følger [Semantic Versioning](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-11
+
+### Lagt til
+
+- Uføretrygd (valgfritt steg B): uføretrygd per år, fribeløp 1 G eller 0,4 G, inntekt etter
+  uførhet og reduksjonsprosent (maks 70 %). Viser bunnfradrag, hvor mye du kan tjene før
+  trygda reduseres, reduksjonen og utbetalt uføretrygd. Uføretrygden er med i skatten,
+  i årshjulet (trekkfri i juni, halvt trekk i desember) og i utregningen.
+- Nøkkelkortet «Jobben gir deg / time» for uføre: netto per arbeidstime etter skatt og redusert
+  uføretrygd, sammenlignet med å ikke jobbe.
+- Forklaring når tabell- eller prosenttrekk er valgt: fradragene endrer ikke månedsutbetalingen,
+  men kommer tilbake ved skatteoppgjøret. Netto-kortet viser hvor mye du får tilbake.
+- Rentefradraget viser hvor mye mer du får utbetalt per måned i «Smart».
+- Timetall og timelønn vises under stillingsprosenten.
+
+### Endret
+
+- Månedslønn og årslønn er nå det du faktisk tjener, ikke lønn ved 100 % stilling.
+  Stillingsprosenten brukes bare til timetall og timelønn (10 000 kr/mnd i 30 % = 205 kr/t).
+- Fagforening og BSU fylles ut med høyeste fradragsberettigede beløp når de slås på, så
+  effekten vises med en gang.
+- Reisefradrag forklarer når reisekostnaden er under bunnbeløpet på 12 000 kr.
+- Flere hurtigknapper for lave lønner, og stegene heter nå A–D.
+
 ## [1.0.0] - 2026-11-10
 
 ### Lagt til
@@ -26,5 +50,6 @@ og prosjektet følger [Semantic Versioning](https://semver.org/lang/no/).
 - Workflow som tester, bygger og publiserer til `build`-grenen og GitHub Pages.
 - Prosjektoppsett med arbeidsregler (`CLAUDE.md`), `.gitignore` og `.gitattributes`.
 
-[Unreleased]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/releases/tag/v1.0.0

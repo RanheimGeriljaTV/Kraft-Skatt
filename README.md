@@ -2,7 +2,8 @@
 
 Lønns-, skatte-, gjelds- og feriepengekalkulator for ranheimkraft.no. Viser hva du faktisk får
 utbetalt i en vanlig måned, i juni (feriepenger) og i desember (halv skatt), og hvor mye
-gjeldsrentene dine sparer deg i skatt.
+gjeldsrentene dine sparer deg i skatt. For deg med uføretrygd viser den hva jobben gir etter
+skatt og redusert uføretrygd.
 
 - **Nettside:** <https://ranheimkraft.no/skatt/>
 - **Forhåndsvisning:** <https://ranheimgeriljatv.github.io/Kraft-Skatt/>
@@ -18,9 +19,14 @@ Nullstill» tømmer lagringen og setter alle felter tilbake.
 ## Funksjoner
 
 - **Lønn:** timelønn, månedslønn eller årslønn (omregnes når du bytter fane), stillingsprosent,
-  arbeidsuke (37,5 eller 35,5 t) og fastlønn eller timelønn.
+  arbeidsuke (37,5 eller 35,5 t) og fastlønn eller timelønn. Månedslønn og årslønn er det du
+  faktisk tjener. Stillingsprosenten gir antall timer og dermed timelønna.
+- **Uføretrygd (valgfritt):** uføretrygd per år, fribeløp (1 G eller 0,4 G), inntekt etter
+  uførhet og reduksjonsprosent. Viser bunnfradrag, hvor mye du kan tjene før trygda reduseres,
+  reduksjonen, og hva du sitter igjen med per arbeidstime.
 - **Gjeld og fradrag:** gjeld og rente med utregnet rentefradrag (22 %), fagforeningskontingent,
-  BSU, reisefradrag og formuesskatt.
+  BSU, reisefradrag og formuesskatt. I «Smart» øker fradragene netto per måned. Med tabell- eller
+  prosenttrekk står trekket fast, og fradragene kommer som penger tilbake ved skatteoppgjøret.
 - **Skattetrekk:** smart beregning med anbefalt tabell, tabelltrekk (8000–8400, 9010–9400,
   7150/7160/7170) eller prosenttrekk med frikort. Viser forventet restskatt eller penger
   tilbake når trekket ikke stemmer med den faktiske skatten.
@@ -34,28 +40,35 @@ Nullstill» tømmer lagringen og setter alle felter tilbake.
 Alle satser ligger i [`src/utils/satser.js`](src/utils/satser.js), og selve motoren i
 [`src/utils/taxCalculator.js`](src/utils/taxCalculator.js).
 
-| Del                         | Regel                                                                                     |
-| --------------------------- | ----------------------------------------------------------------------------------------- |
-| Personinntekt               | Lønn minus ferietrekk, pluss feriepenger                                                  |
-| Minstefradrag               | 46 %, maks 95 700 kr                                                                      |
-| Personfradrag               | 114 540 kr                                                                                |
-| Skatt på alminnelig inntekt | 22 % av personinntekt minus fradrag                                                       |
-| Trygdeavgift                | 7,6 % (ingen under 99 650 kr, deretter opptrapping på 25 %)                               |
-| Trinnskatt                  | 1,7 / 4,0 / 13,7 / 16,8 / 17,8 % fra 226 100 / 318 300 / 725 050 / 980 100 / 1 467 200 kr |
-| Formuesskatt                | 1,0 % over 1 900 000 kr (1,1 % over 21,5 mill.)                                           |
-| Fagforening                 | Fradrag opptil 8 700 kr                                                                   |
-| BSU                         | 10 % skattefradrag av opptil 27 500 kr                                                    |
-| Reisefradrag                | 1,90 kr/km, minus 12 000 kr                                                               |
-| Trekk                       | Årsskatt / 10,5 måneder: juni trekkfri, halv skatt i desember                             |
-| Ferietrekk (fastlønn)       | Virkedager / 26 av månedslønna (5 uker = 30/26)                                           |
-| Feriepenger                 | 12 % / 10,2 % av lønna (etter ferietrekk), +2,3 % over 60 år opptil 6 G                   |
+| Del                         | Regel                                                                                      |
+| --------------------------- | ------------------------------------------------------------------------------------------ |
+| Personinntekt               | Lønn minus ferietrekk, pluss feriepenger                                                   |
+| Minstefradrag               | 46 %, maks 95 700 kr                                                                       |
+| Personfradrag               | 114 540 kr                                                                                 |
+| Skatt på alminnelig inntekt | 22 % av personinntekt minus fradrag                                                        |
+| Trygdeavgift                | 7,6 % (ingen under 99 650 kr, deretter opptrapping på 25 %)                                |
+| Trinnskatt                  | 1,7 / 4,0 / 13,7 / 16,8 / 17,8 % fra 226 100 / 318 300 / 725 050 / 980 100 / 1 467 200 kr  |
+| Formuesskatt                | 1,0 % over 1 900 000 kr (1,1 % over 21,5 mill.)                                            |
+| Fagforening                 | Fradrag opptil 8 700 kr                                                                    |
+| BSU                         | 10 % skattefradrag av opptil 27 500 kr                                                     |
+| Reisefradrag                | 1,90 kr/km, minus 12 000 kr                                                                |
+| Trekk                       | Årsskatt / 10,5 måneder: juni trekkfri, halv skatt i desember                              |
+| Ferietrekk (fastlønn)       | Virkedager / 26 av månedslønna (5 uker = 30/26)                                            |
+| Feriepenger                 | 12 % / 10,2 % av lønna (etter ferietrekk), +2,3 % over 60 år opptil 6 G                    |
+| Uføretrygd                  | Skattes som lønn, trekkfri i juni, halvt trekk i desember                                  |
+| Bunnfradrag (uføre)         | Inntekt etter uførhet + fribeløp (1 G etter 2 år, ellers 0,4 G; snitt-G 2026 = 134 419 kr) |
+| Reduksjon (uføre)           | Reduksjonsprosent (maks 70 %) av arbeidsinntekt over bunnfradraget                         |
 
 Forenklinger: beregningen gjelder en enslig lønnstaker utenfor tiltakssonen, uten
 pensjonsinntekt. Tabelltrekket er en tilnærming til Skatteetatens trekktabeller. Feriepengene
-regnes av samme års lønn (stabil lønn år til år).
+regnes av samme års lønn (stabil lønn år til år). Uføreberegningen tar ikke med inntektstak
+(80 % av inntekt før uførhet), barnetillegg eller etteroppgjør.
 
 Kilder: [Skattesatser 2026 (regjeringen.no)](https://www.regjeringen.no/no/tema/okonomi-og-budsjett/skatter-og-avgifter/skattesatser-2026/id3121978/)
-og [tabelltrinn fra 2025 (Skatteetaten)](https://www.skatteetaten.no/nn/bedrift-og-organisasjon/arbeidsgiver/skattekort-og-skattetrekk/utfore-forskotstrekk/oversikt-over-tabelltrinnene-for-trekktabeller-fra-og-med-2025/).
+[tabelltrinn fra 2025 (Skatteetaten)](https://www.skatteetaten.no/nn/bedrift-og-organisasjon/arbeidsgiver/skattekort-og-skattetrekk/utfore-forskotstrekk/oversikt-over-tabelltrinnene-for-trekktabeller-fra-og-med-2025/),
+[Regelendringer for uføretrygd i 2026 (Nav)](https://www.nav.no/regelendring-uforetrygd),
+[Uføretrygd og skatt (Skatteetaten)](https://www.skatteetaten.no/nn/person/skatt/hjelp-til-rett-skatt/arbeid-trygd-og-pensjon/pensjon-og-uforetrygd/uforetrygd/uforetrygd-og-skatt/)
+og [skattetrekk i juni og desember (Nav)](https://www.nav.no/skattetrekk).
 
 ## Utvikling
 
@@ -70,17 +83,17 @@ npm run build        # bygger til dist/
 
 ## Filer
 
-| Fil                                | Hva den gjør                                            |
-| ---------------------------------- | ------------------------------------------------------- |
-| `src/utils/taxCalculator.js`       | Beregningsmotor (lønn, skatt, tabelltrekk, feriepenger) |
-| `src/utils/satser.js`              | Alle skattesatser for inntektsåret                      |
-| `src/hooks/useLagredeValg.js`      | Lagring i `localStorage` og nullstilling                |
-| `src/components/PrivacyBanner.jsx` | Personvernboksen med nullstill-knapp                    |
-| `src/components/InputPanel.jsx`    | Steg A–C: lønn, gjeld og fradrag, skattemodus og ferie  |
-| `src/components/SummaryCards.jsx`  | Fire nøkkelkort og fordelingsbar                        |
-| `src/components/YearlyPayouts.jsx` | Årshjulet: vanlig måned, juni og desember               |
-| `src/components/TaxBreakdown.jsx`  | Utregningen steg for steg                               |
-| `src/components/MobileBar.jsx`     | Fast bunnlinje på mobil                                 |
+| Fil                                | Hva den gjør                                                       |
+| ---------------------------------- | ------------------------------------------------------------------ |
+| `src/utils/taxCalculator.js`       | Beregningsmotor (lønn, skatt, tabelltrekk, feriepenger)            |
+| `src/utils/satser.js`              | Alle skattesatser for inntektsåret                                 |
+| `src/hooks/useLagredeValg.js`      | Lagring i `localStorage` og nullstilling                           |
+| `src/components/PrivacyBanner.jsx` | Personvernboksen med nullstill-knapp                               |
+| `src/components/InputPanel.jsx`    | Steg A–D: lønn, uføretrygd, gjeld og fradrag, skattetrekk og ferie |
+| `src/components/SummaryCards.jsx`  | Fire nøkkelkort og fordelingsbar                                   |
+| `src/components/YearlyPayouts.jsx` | Årshjulet: vanlig måned, juni og desember                          |
+| `src/components/TaxBreakdown.jsx`  | Utregningen steg for steg                                          |
+| `src/components/MobileBar.jsx`     | Fast bunnlinje på mobil                                            |
 
 ## Publisering
 

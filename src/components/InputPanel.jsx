@@ -1,5 +1,14 @@
 import { useMemo, useState } from 'react';
-import { ArrowRight, Briefcase, Landmark, Search, Sparkles, SunMedium } from 'lucide-react';
+import {
+  ArrowRight,
+  Briefcase,
+  HeartHandshake,
+  Info,
+  Landmark,
+  Search,
+  Sparkles,
+  SunMedium,
+} from 'lucide-react';
 import { Bryter, Glider, Hint, Hurtigknapper, Kort, Tallfelt, Valg } from './ui.jsx';
 import { kr, sats, tall } from '../utils/format.js';
 import {
@@ -11,20 +20,29 @@ import {
 import { FERIEAVTALER, SATSER } from '../utils/satser.js';
 
 const BASIS = {
-  time: { navn: 'Timelønn', suffiks: 'kr/t', maks: 1_000, steg: 5, hurtig: [200, 250, 300, 400] },
+  time: {
+    navn: 'Timelønn',
+    suffiks: 'kr/t',
+    maks: 1_000,
+    steg: 5,
+    hurtig: [150, 200, 250, 300, 400],
+    hint: 'Det du får per time, før skatt. Stillingsprosenten under bestemmer hvor mange timer du jobber.',
+  },
   maaned: {
     navn: 'Månedslønn',
     suffiks: 'kr/mnd',
     maks: 200_000,
     steg: 500,
-    hurtig: [40_000, 50_000, 60_000, 75_000],
+    hurtig: [10_000, 25_000, 40_000, 50_000, 60_000, 75_000],
+    hint: 'Det du faktisk får i lønn per måned, før skatt.',
   },
   aar: {
     navn: 'Årslønn',
     suffiks: 'kr/år',
     maks: 2_400_000,
     steg: 5_000,
-    hurtig: [500_000, 600_000, 750_000, 1_000_000],
+    hurtig: [150_000, 300_000, 500_000, 600_000, 750_000, 1_000_000],
+    hint: 'Det du faktisk får i lønn per år, før skatt og uten feriepenger.',
   },
 };
 
@@ -38,10 +56,25 @@ function tabellBeskrivelse(nummer) {
   return `${nummer} – ingen ekstra fradrag`;
 }
 
+function Infoboks({ farge = 'accent', children }) {
+  const stil =
+    farge === 'emerald'
+      ? 'border-emerald-400/20 bg-emerald-400/[0.06]'
+      : farge === 'amber'
+        ? 'border-amber-400/25 bg-amber-400/[0.07]'
+        : 'border-accent/25 bg-accent/[0.07]';
+  return (
+    <div className={`rounded-xl border p-3 text-sm leading-relaxed text-zinc-300 ${stil}`}>
+      {children}
+    </div>
+  );
+}
+
 export default function InputPanel({ valg, oppdater, resultat }) {
   return (
     <div className="space-y-4">
-      <LonnKort valg={valg} oppdater={oppdater} />
+      <LonnKort valg={valg} oppdater={oppdater} resultat={resultat} />
+      <UforeKort valg={valg} oppdater={oppdater} resultat={resultat} />
       <GjeldKort valg={valg} oppdater={oppdater} resultat={resultat} />
       <SkattKort valg={valg} oppdater={oppdater} resultat={resultat} />
     </div>
@@ -49,25 +82,26 @@ export default function InputPanel({ valg, oppdater, resultat }) {
 }
 
 // ---------------------------------------------------------------------------
-// Kort A: Lønn og arbeidstid
+// Steg A: Lønn og arbeidstid
 // ---------------------------------------------------------------------------
-function LonnKort({ valg, oppdater }) {
+function LonnKort({ valg, oppdater, resultat }) {
   const basis = BASIS[valg.lonnBasis] ?? BASIS.maaned;
   const [egenStilling, setEgenStilling] = useState(!STILLINGER.includes(valg.stilling));
   const visEgen = egenStilling || !STILLINGER.includes(valg.stilling);
+  const { lonn } = resultat;
 
   const byttBasis = (ny) => {
     if (ny === valg.lonnBasis) return;
     oppdater({
       lonnBasis: ny,
-      belop: konverterBelop(valg.belop, valg.lonnBasis, ny, valg.arbeidsuke),
+      belop: konverterBelop(valg.belop, valg.lonnBasis, ny, valg.stilling, valg.arbeidsuke),
     });
   };
 
   return (
     <Kort steg="Steg A" tittel="Lønn og arbeidstid" ikon={Briefcase}>
       <Valg
-        etikett="Utgangspunkt"
+        etikett="Jeg vet"
         verdi={valg.lonnBasis}
         onChange={byttBasis}
         valg={Object.entries(BASIS).map(([verdi, b]) => ({ verdi, navn: b.navn }))}
@@ -75,12 +109,13 @@ function LonnKort({ valg, oppdater }) {
 
       <div className="space-y-3">
         <Tallfelt
-          etikett={`${basis.navn} (ved 100 % stilling)`}
+          etikett={basis.navn}
           verdi={valg.belop}
           desimaler={valg.lonnBasis === 'time' ? 2 : 0}
           maks={basis.maks * 5}
           suffiks={basis.suffiks}
           onChange={(belop) => oppdater({ belop })}
+          hint={basis.hint}
         />
         <Hurtigknapper
           verdier={basis.hurtig}
@@ -113,12 +148,12 @@ function LonnKort({ valg, oppdater }) {
           }}
           valg={[
             ...STILLINGER.map((s) => ({ verdi: s, navn: `${s} %` })),
-            { verdi: 'egen', navn: 'Egen' },
+            { verdi: 'egen', navn: 'Annen' },
           ]}
         />
         {visEgen && (
           <Tallfelt
-            etikett="Egendefinert stilling"
+            etikett="Din stillingsprosent"
             verdi={valg.stilling}
             maks={100}
             desimaler={1}
@@ -126,10 +161,16 @@ function LonnKort({ valg, oppdater }) {
             onChange={(stilling) => oppdater({ stilling })}
           />
         )}
+        <Hint>
+          {Math.round(lonn.timerAar)} timer i året ·{' '}
+          {valg.lonnBasis === 'time'
+            ? `${kr(lonn.maanedslonn)} i måneden`
+            : `timelønn ${tall(lonn.timelonn, 2)} kr`}
+        </Hint>
       </div>
 
       <Valg
-        etikett="Arbeidsuke"
+        etikett="Arbeidsuke ved 100 %"
         verdi={valg.arbeidsuke}
         onChange={(arbeidsuke) => oppdater({ arbeidsuke })}
         valg={[
@@ -152,16 +193,136 @@ function LonnKort({ valg, oppdater }) {
 }
 
 // ---------------------------------------------------------------------------
-// Kort B: Gjeld, renter og fradrag
+// Steg B: Uføretrygd (valgfritt)
+// ---------------------------------------------------------------------------
+const MINSTE_UFORE =
+  Math.round((SATSER.uforeMinsteYtelseEnsligG * SATSER.grunnbelopSnitt) / 100) * 100;
+
+function UforeKort({ valg, oppdater, resultat }) {
+  const { ufore, lonn } = resultat;
+
+  return (
+    <Kort steg="Steg B · valgfritt" tittel="Uføretrygd" ikon={HeartHandshake}>
+      <Bryter
+        etikett="Jeg mottar uføretrygd fra Nav"
+        under="Se hva jobben gir deg etter skatt og redusert uføretrygd"
+        pa={valg.ufore}
+        onChange={(pa) =>
+          oppdater(
+            pa ? { ufore: true, uforetrygd: valg.uforetrygd || MINSTE_UFORE } : { ufore: false },
+          )
+        }
+      >
+        <Tallfelt
+          etikett="Uføretrygd per år før reduksjon"
+          verdi={valg.uforetrygd}
+          maks={2_000_000}
+          suffiks="kr/år"
+          onChange={(uforetrygd) => oppdater({ uforetrygd })}
+          hint={`Står i vedtaket ditt (brutto, uten barnetillegg). Minste årlige ytelse for enslige er 2,529 G ≈ ${kr(MINSTE_UFORE)}.`}
+        />
+
+        <Valg
+          etikett="Fribeløp"
+          verdi={valg.fribelop}
+          onChange={(fribelop) => oppdater({ fribelop })}
+          valg={[
+            { verdi: '1g', navn: '1 G', under: 'uføretrygd i 2 år+' },
+            { verdi: '04g', navn: '0,4 G', under: 'første 24 måneder' },
+          ]}
+        />
+
+        <div className="grid grid-cols-2 gap-3">
+          <Tallfelt
+            etikett="Inntekt etter uførhet"
+            verdi={valg.ieu}
+            maks={2_000_000}
+            suffiks="kr"
+            onChange={(ieu) => oppdater({ ieu })}
+          />
+          <Tallfelt
+            etikett="Reduksjons­prosent"
+            verdi={valg.reduksjonsprosent}
+            maks={SATSER.uforeReduksjonMaks}
+            desimaler={1}
+            suffiks="%"
+            onChange={(reduksjonsprosent) => oppdater({ reduksjonsprosent })}
+          />
+        </div>
+        <Hint>
+          Begge står i vedtaket. Inntekt etter uførhet (IEU) er 0 hvis du er 100 % ufør.
+          Reduksjonsprosenten (tidligere kompensasjonsgrad) er maks {SATSER.uforeReduksjonMaks} %
+          fra 1. juli 2026.
+        </Hint>
+
+        <Infoboks farge={ufore.reduksjon > 0 ? 'amber' : 'emerald'}>
+          <p>
+            Bunnfradrag: <strong className="text-white">{kr(ufore.bunnfradrag)}</strong>{' '}
+            {valg.ieu > 0
+              ? `(IEU ${kr(valg.ieu)} + fribeløp ${kr(ufore.fribelop)})`
+              : `(fribeløp ${valg.fribelop === '1g' ? '1 G' : '0,4 G'})`}
+            . Du tjener <strong className="text-white">{kr(lonn.arbeidsinntekt)}</strong> i år inkl.
+            feriepenger.
+          </p>
+          <p className="mt-1.5">
+            {ufore.reduksjon > 0 ? (
+              <>
+                Uføretrygden reduseres med{' '}
+                <strong className="text-amber-300">{kr(ufore.reduksjon)}</strong> (
+                {tall(ufore.reduksjonsprosent, 1)} % av {kr(ufore.overBunnfradrag)} over
+                bunnfradraget).
+              </>
+            ) : (
+              <>
+                Uføretrygden reduseres ikke. Du kan tjene{' '}
+                <strong className="text-emerald-300">{kr(ufore.igjenFoerReduksjon)}</strong> til i
+                år før den blir redusert.
+              </>
+            )}
+          </p>
+          <p className="mt-1.5">
+            Utbetalt fra Nav: <strong className="text-white">{kr(ufore.utbetalt)}</strong> i året (
+            {kr(ufore.maaned)} i måneden, før skatt).
+          </p>
+        </Infoboks>
+      </Bryter>
+    </Kort>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Steg C: Gjeld, renter og fradrag
 // ---------------------------------------------------------------------------
 function GjeldKort({ valg, oppdater, resultat }) {
   const { fradrag } = resultat;
   const [visFag, setVisFag] = useState(valg.fagforening > 0);
   const [visBsu, setVisBsu] = useState(valg.bsu > 0);
   const [visReise, setVisReise] = useState(valg.reiseKm > 0);
+  const smart = valg.skattemodus === 'smart';
 
   return (
-    <Kort steg="Steg B" tittel="Gjeld, renter og fradrag" ikon={Landmark}>
+    <Kort steg="Steg C" tittel="Gjeld, renter og fradrag" ikon={Landmark}>
+      {!smart && (
+        <Infoboks farge="amber">
+          <p className="flex gap-2">
+            <Info size={16} className="mt-0.5 shrink-0 text-amber-300" aria-hidden="true" />
+            <span>
+              Du bruker {valg.skattemodus === 'tabell' ? 'tabelltrekk' : 'prosenttrekk'}, så
+              fradragene endrer ikke det du får utbetalt hver måned. De kommer som penger tilbake
+              ved skatteoppgjøret.{' '}
+              <button
+                type="button"
+                onClick={() => oppdater({ skattemodus: 'smart' })}
+                className="inline-flex min-h-11 items-center font-semibold text-amber-200 underline underline-offset-4"
+              >
+                Bytt til «Smart»
+              </button>{' '}
+              for å se effekten per måned.
+            </span>
+          </p>
+        </Infoboks>
+      )}
+
       <div className="space-y-3">
         <Tallfelt
           etikett="Total gjeld (boliglån, studielån, billån)"
@@ -199,7 +360,7 @@ function GjeldKort({ valg, oppdater, resultat }) {
         />
       </div>
 
-      <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] p-3 text-sm leading-relaxed text-zinc-300">
+      <Infoboks farge="emerald">
         Årlige renteutgifter: <strong className="text-white">{kr(fradrag.renteutgifter)}</strong>
         <ArrowRight
           size={14}
@@ -207,11 +368,14 @@ function GjeldKort({ valg, oppdater, resultat }) {
           aria-hidden="true"
         />
         gir deg <strong className="text-emerald-300">{kr(fradrag.rentebesparelse)}</strong> i
-        redusert skatt per år ({sats(SATSER.skattAlminnelig)} rentefradrag).
-      </div>
+        redusert skatt per år ({sats(SATSER.skattAlminnelig)} rentefradrag)
+        {smart && fradrag.rentebesparelse > 0
+          ? `, altså ${kr(fradrag.rentebesparelse / 10.5)} mer utbetalt i måneden.`
+          : '.'}
+      </Infoboks>
 
       <div className="space-y-2">
-        <p className="font-mono text-[11px] uppercase tracking-widest text-zinc-400">
+        <p className="font-mono text-[11px] tracking-widest text-zinc-400 uppercase">
           Andre fradrag
         </p>
         <Bryter
@@ -220,7 +384,7 @@ function GjeldKort({ valg, oppdater, resultat }) {
           pa={visFag}
           onChange={(pa) => {
             setVisFag(pa);
-            if (!pa) oppdater({ fagforening: 0 });
+            oppdater({ fagforening: pa ? valg.fagforening || SATSER.fagforeningMaks : 0 });
           }}
         >
           <Tallfelt
@@ -232,7 +396,7 @@ function GjeldKort({ valg, oppdater, resultat }) {
             hint={
               valg.fagforening > SATSER.fagforeningMaks
                 ? `Bare ${kr(SATSER.fagforeningMaks)} gir fradrag.`
-                : undefined
+                : `Gir ${kr(fradrag.fagforening * SATSER.skattAlminnelig)} mindre i skatt per år.`
             }
           />
         </Bryter>
@@ -243,7 +407,7 @@ function GjeldKort({ valg, oppdater, resultat }) {
           pa={visBsu}
           onChange={(pa) => {
             setVisBsu(pa);
-            if (!pa) oppdater({ bsu: 0 });
+            oppdater({ bsu: pa ? valg.bsu || SATSER.bsuMaksSparing : 0 });
           }}
         >
           <Tallfelt
@@ -258,7 +422,7 @@ function GjeldKort({ valg, oppdater, resultat }) {
 
         <Bryter
           etikett="Reisefradrag / pendling"
-          under={`${tall(SATSER.reisefradragPerKm, 2)} kr per km over ${kr(SATSER.reisefradragBunn)}`}
+          under={`${tall(SATSER.reisefradragPerKm, 2)} kr per km, fradrag for det som er over ${kr(SATSER.reisefradragBunn)}`}
           pa={visReise}
           onChange={(pa) => {
             setVisReise(pa);
@@ -281,7 +445,13 @@ function GjeldKort({ valg, oppdater, resultat }) {
               onChange={(reiseDager) => oppdater({ reiseDager })}
             />
           </div>
-          <Hint>Reisefradrag: {kr(fradrag.reisefradrag)} per år.</Hint>
+          <Hint>
+            {fradrag.reisefradrag > 0
+              ? `Reisekostnad ${kr(fradrag.reisekostnad)} gir ${kr(fradrag.reisefradrag)} i fradrag.`
+              : fradrag.reisekostnad > 0
+                ? `Reisekostnaden (${kr(fradrag.reisekostnad)}) er under ${kr(SATSER.reisefradragBunn)}, så du får ikke fradrag.`
+                : 'Skriv inn avstanden til jobben.'}
+          </Hint>
         </Bryter>
       </div>
 
@@ -298,44 +468,44 @@ function GjeldKort({ valg, oppdater, resultat }) {
 }
 
 // ---------------------------------------------------------------------------
-// Kort C: Skattemodus og ferieavtale
+// Steg D: Skattemodus og ferieavtale
 // ---------------------------------------------------------------------------
 function SkattKort({ valg, oppdater, resultat }) {
   const anbefalt = resultat.fradrag.anbefaltTabell;
 
   return (
-    <Kort steg="Steg C" tittel="Skattemodus og ferieavtale" ikon={SunMedium}>
+    <Kort steg="Steg D" tittel="Skattetrekk og ferie" ikon={SunMedium}>
       <Valg
-        etikett="Skattetrekk"
+        etikett="Hvordan trekkes skatten?"
         verdi={valg.skattemodus}
         onChange={(skattemodus) => oppdater({ skattemodus })}
         umami="skatt_modus"
         valg={[
-          { verdi: 'smart', navn: 'Smart', under: 'inkl. fradrag' },
-          { verdi: 'tabell', navn: 'Tabell', under: 'trekkode' },
+          { verdi: 'smart', navn: 'Smart', under: 'riktig trekk' },
+          { verdi: 'tabell', navn: 'Tabell', under: 'fra skattekort' },
           { verdi: 'prosent', navn: 'Prosent', under: 'fast trekk' },
         ]}
       />
 
       {valg.skattemodus === 'smart' && (
-        <div className="rounded-xl border border-accent/25 bg-accent/[0.07] p-3 text-sm leading-relaxed text-zinc-300">
+        <Infoboks>
           <p className="flex items-center gap-2 font-semibold text-white">
             <Sparkles size={16} className="text-accent" aria-hidden="true" />
-            Nøyaktig skatt med dine fradrag
+            Trekket som gir null i restskatt
           </p>
           <p className="mt-1">
-            Basert på gjeldsrentene og fradragene dine tilsvarer dette omtrent{' '}
-            <strong className="text-accent">tabell {anbefalt}</strong>.
+            Regner ut skatten med alle fradragene dine og fordeler den over 10,5 måneder. Det
+            tilsvarer omtrent <strong className="text-accent">tabell {anbefalt}</strong>.
           </p>
           <button
             type="button"
             onClick={() => oppdater({ skattemodus: 'tabell', tabellnummer: anbefalt })}
-            className="mt-2 inline-flex min-h-11 items-center gap-1.5 font-semibold text-accent underline-offset-4 hover:underline"
+            className="mt-1 inline-flex min-h-11 items-center gap-1.5 font-semibold text-accent underline-offset-4 hover:underline"
           >
             Sammenlign med tabell {anbefalt}
             <ArrowRight size={14} aria-hidden="true" />
           </button>
-        </div>
+        </Infoboks>
       )}
 
       {valg.skattemodus === 'tabell' && (
@@ -369,6 +539,13 @@ function SkattKort({ valg, oppdater, resultat }) {
         </div>
       )}
 
+      {valg.ufore && valg.skattemodus !== 'smart' && (
+        <Hint>
+          Med uføretrygd og lønn trekker vanligvis Nav etter tabell og arbeidsgiveren med prosent.
+          Kalkulatoren viser samlet trekk for begge.
+        </Hint>
+      )}
+
       <Valg
         etikett="Ferieavtale"
         verdi={valg.ferie}
@@ -400,7 +577,7 @@ function TabellVelger({ valg, oppdater, anbefalt }) {
       <div>
         <label
           htmlFor="tabellsok"
-          className="mb-2 block font-mono text-[11px] uppercase tracking-widest text-zinc-400"
+          className="mb-2 block font-mono text-[11px] tracking-widest text-zinc-400 uppercase"
         >
           Søk etter tabellnummer
         </label>
@@ -427,7 +604,7 @@ function TabellVelger({ valg, oppdater, anbefalt }) {
       <div>
         <label
           htmlFor="tabellvalg"
-          className="mb-2 block font-mono text-[11px] uppercase tracking-widest text-zinc-400"
+          className="mb-2 block font-mono text-[11px] tracking-widest text-zinc-400 uppercase"
         >
           Tabellnummer fra skattekortet
         </label>

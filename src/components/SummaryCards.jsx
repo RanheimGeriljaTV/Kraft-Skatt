@@ -26,7 +26,7 @@ function Nokkelkort({ ikon: Ikon, tittel, verdi, under, children, fremhevet }) {
 }
 
 const DELER = [
-  { nokkel: 'netto', navn: 'Netto lønn', farge: 'bg-green-500', prikk: 'bg-green-500' },
+  { nokkel: 'netto', navn: 'Netto', farge: 'bg-green-500', prikk: 'bg-green-500' },
   { nokkel: 'ferie', navn: 'Feriepenger', farge: 'bg-sky-400', prikk: 'bg-sky-400' },
   {
     nokkel: 'besparelse',
@@ -38,7 +38,7 @@ const DELER = [
 ];
 
 export default function SummaryCards({ resultat }) {
-  const { lonn, skatt, netto, trekk, fradrag } = resultat;
+  const { lonn, skatt, netto, trekk, fradrag, ufore, oppgjor, innstillinger } = resultat;
   const brutto = lonn.personinntekt;
   const besparelse = fradrag.rentebesparelse;
   const andeler = {
@@ -47,6 +47,7 @@ export default function SummaryCards({ resultat }) {
     besparelse,
     skatt: skatt.total,
   };
+  const smart = innstillinger.skattemodus === 'smart';
 
   return (
     <section aria-labelledby="resultat-tittel" className="space-y-4">
@@ -58,21 +59,46 @@ export default function SummaryCards({ resultat }) {
           ikon={Wallet}
           tittel="Netto utbetalt / mnd"
           verdi={kr(netto.vanligMaaned)}
-          under={`Brutto ${kr(lonn.maanedslonn)}`}
+          under={
+            ufore.aktiv
+              ? `Brutto ${kr(trekk.vanligBrutto)} (lønn ${kr(lonn.maanedslonn)} + uføretrygd ${kr(ufore.maaned)})`
+              : `Brutto ${kr(lonn.maanedslonn)}`
+          }
           fremhevet
-        />
+        >
+          {!smart && oppgjor >= 500 && (
+            <p className="mt-2 text-sm text-amber-200">
+              Trekket ditt er høyere enn skatten. Du får ca. {kr(oppgjor)} tilbake ved
+              skatteoppgjøret.
+            </p>
+          )}
+        </Nokkelkort>
         <Nokkelkort
           ikon={CalendarDays}
-          tittel="Netto årslønn"
+          tittel={ufore.aktiv ? 'Netto per år' : 'Netto årslønn'}
           verdi={kr(netto.aar)}
-          under={`Brutto ${kr(brutto)} inkl. feriepenger`}
+          under={`Brutto ${kr(brutto)} inkl. feriepenger${ufore.aktiv ? ' og uføretrygd' : ''}`}
         />
-        <Nokkelkort
-          ikon={Clock}
-          tittel="Netto timelønn"
-          verdi={kr(netto.timelonn)}
-          under={`Brutto ${tall(lonn.timelonn, 2)} kr`}
-        />
+        {ufore.aktiv ? (
+          <Nokkelkort
+            ikon={Clock}
+            tittel="Jobben gir deg / time"
+            verdi={kr(netto.perArbeidstime)}
+            under={`Brutto ${tall(lonn.timelonn, 2)} kr/t · ${kr(netto.jobbGevinst)} netto i året`}
+          >
+            <p className="mt-2 text-sm text-zinc-400">
+              Det du sitter igjen med per arbeidstime etter skatt
+              {ufore.reduksjon > 0 ? ' og redusert uføretrygd' : ''}, sammenlignet med å ikke jobbe.
+            </p>
+          </Nokkelkort>
+        ) : (
+          <Nokkelkort
+            ikon={Clock}
+            tittel="Netto timelønn"
+            verdi={kr(netto.timelonn)}
+            under={`Brutto ${tall(lonn.timelonn, 2)} kr`}
+          />
+        )}
         <Nokkelkort
           ikon={Percent}
           tittel="Skatt og rentefradrag"

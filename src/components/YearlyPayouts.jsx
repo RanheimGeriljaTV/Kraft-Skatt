@@ -1,5 +1,5 @@
 import { CalendarRange, Gift, Sun } from 'lucide-react';
-import { kr, prosent } from '../utils/format.js';
+import { kr, prosent, sats } from '../utils/format.js';
 import { FERIEAVTALER } from '../utils/satser.js';
 
 function Linje({ navn, belop, type }) {
@@ -42,7 +42,8 @@ function Utbetaling({ ikon: Ikon, tittel, etikett, farge, netto, children, merkn
 }
 
 export default function YearlyPayouts({ resultat }) {
-  const { trekk, lonn, innstillinger, oppgjor } = resultat;
+  const { trekk, lonn, innstillinger, oppgjor, ufore } = resultat;
+  const uforeLinje = ufore.aktiv ? <Linje navn="Uføretrygd (Nav)" belop={ufore.maaned} /> : null;
   const ferie = FERIEAVTALER[innstillinger.ferie] ?? FERIEAVTALER.fem;
   const prosentModus = trekk.modus === 'prosent';
   const tolvMnd = trekk.tabell?.maaneder === 12;
@@ -70,9 +71,10 @@ export default function YearlyPayouts({ resultat }) {
           tittel="Vanlig måned"
           etikett="10 måneder i året"
           farge="bg-green-500/15 text-green-400"
-          netto={trekk.desember.lonn - trekk.vanlig}
+          netto={trekk.vanligBrutto - trekk.vanlig}
         >
-          <Linje navn="Brutto månedslønn" belop={lonn.maanedslonn} />
+          <Linje navn="Lønn" belop={lonn.maanedslonn} />
+          {uforeLinje}
           <Linje navn="Skattetrekk" belop={trekk.vanlig} type="minus" />
         </Utbetaling>
 
@@ -85,16 +87,17 @@ export default function YearlyPayouts({ resultat }) {
           merknad={
             timelonnet
               ? `Som timelønnet får du ikke lønn for ferietimene (${Math.round(lonn.ferietimer)} t). Her er de trukket i juni for å vise hele året samlet.`
-              : `Ferietrekk for ${ferie.kort} = ${ferie.virkedager}/26 av månedslønna. Feriepengene er ${prosent(ferie.sats + ferie.tilleggOver60)} av fjorårets lønn.`
+              : `Ferietrekk for ${ferie.kort} = ${ferie.virkedager}/26 av månedslønna. Feriepengene er ${sats(ferie.sats + ferie.tilleggOver60)} av fjorårets lønn.${ufore.aktiv && !prosentModus ? ' Uføretrygden er trekkfri i juni.' : ''}`
           }
         >
-          <Linje navn="Brutto månedslønn" belop={lonn.maanedslonn} />
+          <Linje navn="Lønn" belop={lonn.maanedslonn} />
           <Linje
             navn={timelonnet ? 'Ubetalte ferietimer' : 'Trekk for ferie'}
             belop={lonn.ferietrekk}
             type="minus"
           />
           <Linje navn="Feriepenger" belop={lonn.feriepenger} type="pluss" />
+          {uforeLinje}
           <Linje
             navn={trekk.juni.trekk > 0 ? 'Skattetrekk' : 'Skattetrekk (trekkfri)'}
             belop={trekk.juni.trekk}
@@ -109,7 +112,8 @@ export default function YearlyPayouts({ resultat }) {
           farge="bg-amber-400/15 text-amber-300"
           netto={trekk.desember.netto}
         >
-          <Linje navn="Brutto månedslønn" belop={lonn.maanedslonn} />
+          <Linje navn="Lønn" belop={lonn.maanedslonn} />
+          {uforeLinje}
           <Linje
             navn={prosentModus || tolvMnd ? 'Skattetrekk' : 'Halvt skattetrekk'}
             belop={trekk.desember.trekk}

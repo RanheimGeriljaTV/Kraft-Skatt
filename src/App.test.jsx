@@ -40,7 +40,7 @@ describe('App', () => {
     );
     render(<App />);
     expect(screen.getByRole('radio', { name: 'Timelønn' })).toHaveAttribute('aria-checked', 'true');
-    expect(vist(screen.getByLabelText(/Timelønn \(ved 100/))).toBe('50 000');
+    expect(vist(screen.getByLabelText('Timelønn', { selector: 'input' }))).toBe('50 000');
   });
 
   it('tallfelt godtar norsk formatering', () => {
@@ -50,8 +50,32 @@ describe('App', () => {
     fireEvent.change(felt, { target: { value: '2 000 000' } });
     fireEvent.blur(felt);
     expect(vist(felt)).toBe('2 000 000');
-    expect(screen.getByText(/gir deg/).textContent).toMatch(/22 % rentefradrag/);
+    expect(screen.getByText(/Årlige renteutgifter/).textContent).toMatch(/22 % rentefradrag/);
     expect(lagret().gjeld).toBe(2_000_000);
+  });
+
+  it('fradrag gir høyere netto per måned i smart-modus', () => {
+    render(<App />);
+    const netto = () => screen.getAllByText(/Netto utbetalt \/ mnd/)[0].parentElement.textContent;
+    const for_ = netto();
+    fireEvent.click(screen.getByRole('switch', { name: /Fagforeningskontingent/ }));
+    expect(lagret().fagforening).toBe(8_700);
+    expect(netto()).not.toBe(for_);
+  });
+
+  it('forklarer at fradrag ikke endrer månedsutbetalingen med tabelltrekk', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('radio', { name: /Tabell/ }));
+    expect(screen.getByText(/fradragene endrer ikke det du får utbetalt/)).toBeInTheDocument();
+  });
+
+  it('uføretrygd: viser bunnfradrag og hva jobben gir per time', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('switch', { name: /Jeg mottar uføretrygd/ }));
+    expect(lagret()).toMatchObject({ ufore: true, uforetrygd: 339_900 });
+    expect(screen.getByText(/Bunnfradrag:/)).toBeInTheDocument();
+    expect(screen.getByText(/Jobben gir deg \/ time/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Uføretrygd \(Nav\)/)).toHaveLength(3);
   });
 
   it('viser tabellvelger med 2025-nummerering', () => {

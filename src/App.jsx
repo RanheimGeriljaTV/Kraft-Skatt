@@ -35,7 +35,8 @@ export default function App() {
           </h1>
           <p className="mt-2 max-w-2xl text-zinc-400">
             Se hva du faktisk får utbetalt hver måned, i juni og i desember, og hvor mye gjelden din
-            sparer deg i skatt.
+            sparer deg i skatt. Mottar du uføretrygd, ser du også hva jobben gir deg etter skatt og
+            reduksjon.
           </p>
         </div>
       </header>
@@ -68,8 +69,10 @@ export default function App() {
         <p>
           Beregningen er et estimat basert på skattesatsene for {AAR} for en enslig lønnsmottaker
           bosatt utenfor Finnmark og Nord-Troms. Tabelltrekket er en forenkling av Skatteetatens
-          trekktabeller, og arbeidsgiveren din kan beregne ferietrekket litt annerledes. Bruk
-          Skatteetatens tjenester for skattekortet ditt.
+          trekktabeller, og arbeidsgiveren din kan beregne ferietrekket litt annerledes.
+          Uføreberegningen bruker reglene fra Nav for 2026 (bunnfradrag, fribeløp og
+          reduksjonsprosent), men tar ikke med inntektstak, barnetillegg eller etteroppgjør. Bruk
+          Skatteetatens og Navs egne tjenester for skattekortet og vedtaket ditt.
         </p>
         <p className="mt-2 font-mono uppercase tracking-widest">Kraft-Skatt v{__APP_VERSION__}</p>
       </footer>

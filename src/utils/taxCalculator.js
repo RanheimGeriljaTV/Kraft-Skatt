@@ -1,14 +1,19 @@
-// Ren beregningsmotor for lønn, skatt, gjeld og feriepenger.
+// Ren beregningsmotor for lønn, uføretrygd, skatt, gjeld og feriepenger.
 // Ingen avhengigheter til React eller nettleseren, så alt kan testes isolert.
 
 import { ARBEIDSUKER, FERIEAVTALER, SATSER } from './satser.js';
 
 export const STANDARDVALG = {
   lonnBasis: 'maaned', // 'time' | 'maaned' | 'aar'
-  belop: 50_000, // fulltidsbeløp (100 %) i valgt basis
-  stilling: 100, // prosent
+  belop: 50_000, // det du faktisk tjener i valgt basis (timelønn er per time)
+  stilling: 100, // prosent – gir antall arbeidstimer
   arbeidsuke: '37.5',
   lonnstype: 'fast', // 'fast' | 'time'
+  ufore: false,
+  uforetrygd: 0, // kr per år før reduksjon (står i vedtaket)
+  ieu: 0, // inntekt etter uførhet, kr per år (0 ved 100 % uføregrad)
+  fribelop: '1g', // '1g' (uføretrygd i 2 år eller mer) | '04g' (første 24 måneder)
+  reduksjonsprosent: 66, // står i vedtaket, maks 70
   gjeld: 0,
   rente: 5.5, // prosent
   fagforening: 0, // kr per år
@@ -29,26 +34,100 @@ const tall = (v, min = 0, maks = Infinity) => {
   return Math.min(maks, Math.max(min, n));
 };
 
+const uke = (arbeidsuke) => ARBEIDSUKER[arbeidsuke] ?? ARBEIDSUKER['37.5'];
+
 // ---------------------------------------------------------------------------
 // Lønn
 // ---------------------------------------------------------------------------
 
-/** Fulltids årslønn (100 %) fra beløpet i valgt basis. */
-export function fulltidsAarslonn(belop, basis, arbeidsuke = '37.5') {
-  const { timerAar } = ARBEIDSUKER[arbeidsuke] ?? ARBEIDSUKER['37.5'];
+/**
+ * Årslønn fra beløpet brukeren skriver inn. Månedslønn og årslønn er det man faktisk
+ * tjener. Timelønn ganges med årstimene i stillingen.
+ */
+export function aarslonnFraBelop(belop, basis, stilling = 100, arbeidsuke = '37.5') {
   const b = tall(belop);
-  if (basis === 'time') return b * timerAar;
+  if (basis === 'time') return b * uke(arbeidsuke).timerAar * (tall(stilling, 0, 100) / 100);
   if (basis === 'aar') return b;
   return b * 12;
 }
 
-/** Gjør om et fulltidsbeløp fra én basis til en annen (brukes når fanen byttes). */
-export function konverterBelop(belop, fra, til, arbeidsuke = '37.5') {
-  const aar = fulltidsAarslonn(belop, fra, arbeidsuke);
-  const { timerAar } = ARBEIDSUKER[arbeidsuke] ?? ARBEIDSUKER['37.5'];
-  if (til === 'time') return Math.round((aar / timerAar) * 100) / 100;
+/** Gjør om beløpet fra én fane til en annen uten å endre årslønna. */
+export function konverterBelop(belop, fra, til, stilling = 100, arbeidsuke = '37.5') {
+  const aar = aarslonnFraBelop(belop, fra, stilling, arbeidsuke);
+  const timer = uke(arbeidsuke).timerAar * (tall(stilling, 0, 100) / 100);
+  if (til === 'time') return timer > 0 ? Math.round((aar / timer) * 100) / 100 : 0;
   if (til === 'aar') return Math.round(aar);
   return Math.round(aar / 12);
+}
+
+/** Lønn og feriepenger for ett år med stabil lønn. */
+export function beregnJobb(v) {
+  const u = uke(v.arbeidsuke);
+  const ferie = FERIEAVTALER[v.ferie] ?? FERIEAVTALER.fem;
+  const stilling = tall(v.stilling, 0, 100) / 100;
+
+  const nominellAar = aarslonnFraBelop(v.belop, v.lonnBasis, v.stilling, v.arbeidsuke);
+  const maanedslonn = nominellAar / 12;
+  const timerAar = u.timerAar * stilling;
+  const timelonn = timerAar > 0 ? nominellAar / timerAar : 0;
+
+  // Ferietrekk: fastlønn trekkes virkedager/26 av månedslønna. Timelønnede får ikke
+  // betalt for ferietimene. Begge gir samme beløp (6 virkedager = 1 uke = 1/52 år).
+  const ferieuker = ferie.virkedager / 6;
+  const ferietimer = ferieuker * u.timerUke * stilling;
+  const ferietrekk =
+    v.lonnstype === 'time' ? ferietimer * timelonn : (ferie.virkedager / 26) * maanedslonn;
+
+  const feriepengegrunnlag = Math.max(0, nominellAar - ferietrekk);
+  const tilleggOver60 =
+    Math.min(feriepengegrunnlag, 6 * SATSER.grunnbelop) * (ferie.tilleggOver60 ?? 0);
+  const feriepenger = feriepengegrunnlag * ferie.sats + tilleggOver60;
+
+  return {
+    nominellAarslonn: nominellAar,
+    maanedslonn,
+    timelonn,
+    timerAar,
+    betalteTimer: Math.max(0, timerAar - ferietimer),
+    ferietimer,
+    ferietrekk,
+    feriepengegrunnlag,
+    feriepenger,
+    tilleggOver60,
+    personinntekt: feriepengegrunnlag + feriepenger,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Uføretrygd
+// ---------------------------------------------------------------------------
+
+/**
+ * Uføretrygd etter reduksjon for arbeidsinntekt.
+ * Bunnfradrag = IEU + fribeløp. Inntekt over bunnfradraget reduserer trygda med
+ * reduksjonsprosenten (maks 70 %).
+ */
+export function beregnUfore(v, arbeidsinntekt) {
+  if (!v.ufore) {
+    return { aktiv: false, fullYtelse: 0, bunnfradrag: 0, reduksjon: 0, utbetalt: 0 };
+  }
+  const fullYtelse = tall(v.uforetrygd);
+  const fribelop = (SATSER.uforeFribelopG[v.fribelop] ?? 1) * SATSER.grunnbelopSnitt;
+  const bunnfradrag = tall(v.ieu) + fribelop;
+  const reduksjonsprosent = tall(v.reduksjonsprosent, 0, SATSER.uforeReduksjonMaks);
+  const over = Math.max(0, arbeidsinntekt - bunnfradrag);
+  const reduksjon = Math.min(fullYtelse, over * (reduksjonsprosent / 100));
+  return {
+    aktiv: true,
+    fullYtelse,
+    fribelop,
+    bunnfradrag,
+    reduksjonsprosent,
+    overBunnfradrag: over,
+    igjenFoerReduksjon: Math.max(0, bunnfradrag - arbeidsinntekt),
+    reduksjon,
+    utbetalt: fullYtelse - reduksjon,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -176,56 +255,32 @@ export function anbefaltTabell(fradragEkvivalent) {
 /**
  * Regner ut hele året fra brukerens valg.
  * Modellen: fast månedslønn i 12 måneder, ferietrekk i juni (fastlønn) eller ubetalte
- * ferietimer (timelønn), og feriepenger av årets feriepengegrunnlag utbetalt i juni.
+ * ferietimer (timelønn), feriepenger utbetalt i juni, og eventuell uføretrygd fra Nav
+ * fordelt likt på 12 måneder.
  */
 export function beregn(innstillinger) {
   const v = { ...STANDARDVALG, ...innstillinger };
-  const uke = ARBEIDSUKER[v.arbeidsuke] ?? ARBEIDSUKER['37.5'];
-  const ferie = FERIEAVTALER[v.ferie] ?? FERIEAVTALER.fem;
-  const stilling = tall(v.stilling, 0, 100) / 100;
-
-  // --- Lønn -----------------------------------------------------------------
-  const fulltid = fulltidsAarslonn(v.belop, v.lonnBasis, v.arbeidsuke);
-  const nominellAar = fulltid * stilling; // 12 vanlige måneder
-  const maanedslonn = nominellAar / 12;
-  const timelonn = fulltid / uke.timerAar;
-  const timerAar = uke.timerAar * stilling;
-
-  // Ferietrekk: fastlønn trekkes virkedager/26 av månedslønna. Timelønnede får ikke
-  // betalt for ferietimene. Begge gir samme beløp (6 virkedager = 1 uke = 1/52 år).
-  const ferieuker = ferie.virkedager / 6;
-  const ferietimer = ferieuker * uke.timerUke * stilling;
-  const ferietrekk =
-    v.lonnstype === 'time' ? ferietimer * timelonn : (ferie.virkedager / 26) * maanedslonn;
-
-  const feriepengegrunnlag = Math.max(0, nominellAar - ferietrekk);
-  const tilleggOver60 =
-    Math.min(feriepengegrunnlag, 6 * SATSER.grunnbelop) * (ferie.tilleggOver60 ?? 0);
-  const feriepenger = feriepengegrunnlag * ferie.sats + tilleggOver60;
-
-  const personinntekt = feriepengegrunnlag + feriepenger;
-  const betalteTimer = Math.max(0, timerAar - ferietimer);
+  const lonn = beregnJobb(v);
+  const ufore = beregnUfore(v, lonn.personinntekt);
+  const personinntekt = lonn.personinntekt + ufore.utbetalt;
+  const uforeMaaned = ufore.utbetalt / 12;
 
   // --- Fradrag --------------------------------------------------------------
   const gjeld = tall(v.gjeld);
   const renteutgifter = gjeld * (tall(v.rente, 0, 100) / 100);
   const fagforening = Math.min(tall(v.fagforening), SATSER.fagforeningMaks);
-  const reiseBrutto = tall(v.reiseKm) * tall(v.reiseDager, 0, 366) * SATSER.reisefradragPerKm;
+  const reisekostnad = tall(v.reiseKm) * tall(v.reiseDager, 0, 366) * SATSER.reisefradragPerKm;
   const reisefradrag = Math.min(
-    Math.max(0, reiseBrutto - SATSER.reisefradragBunn),
+    Math.max(0, reisekostnad - SATSER.reisefradragBunn),
     SATSER.reisefradragMaks,
   );
   const bsuFradrag = Math.min(tall(v.bsu), SATSER.bsuMaksSparing) * SATSER.bsuFradragSats;
   const formue = tall(v.formue);
   const andreFradrag = fagforening + reisefradrag;
+  const alleFradrag = { fradrag: renteutgifter + andreFradrag, bsuFradrag, formue };
 
   // --- Utlignet skatt (fasit ved skatteoppgjøret) ----------------------------
-  const skatt = beregnSkatt({
-    personinntekt,
-    fradrag: renteutgifter + andreFradrag,
-    bsuFradrag,
-    formue,
-  });
+  const skatt = beregnSkatt({ personinntekt, ...alleFradrag });
   const skattUtenRenter = beregnSkatt({
     personinntekt,
     fradrag: andreFradrag,
@@ -242,14 +297,20 @@ export function beregn(innstillinger) {
     andreFradrag +
     skatt.bsuFradrag / SATSER.skattAlminnelig -
     skatt.formuesskatt / SATSER.skattAlminnelig;
-  const anbefalt = anbefaltTabell(fradragEkvivalent);
 
   // --- Skattetrekk gjennom året ---------------------------------------------
+  const grunnlag = {
+    maanedslonn: lonn.maanedslonn,
+    ferietrekk: lonn.ferietrekk,
+    feriepenger: lonn.feriepenger,
+    uforeMaaned,
+    lonnstype: v.lonnstype,
+  };
   let trekk;
   if (v.skattemodus === 'prosent') {
-    trekk = prosenttrekk(v, { maanedslonn, ferietrekk, feriepenger, personinntekt });
+    trekk = prosenttrekk(v, { ...grunnlag, personinntekt });
   } else {
-    let maanedligTrekk;
+    let maanedligTrekk = skatt.total / 10.5;
     let trekkMaaneder = 10.5;
     let tabell = null;
     if (v.skattemodus === 'tabell') {
@@ -262,50 +323,37 @@ export function beregn(innstillinger) {
       });
       trekkMaaneder = tabell.maaneder;
       maanedligTrekk = tabellSkatt.total / trekkMaaneder;
-    } else {
-      maanedligTrekk = skatt.total / 10.5;
     }
-    trekk = tabellAarshjul({
-      maanedligTrekk,
-      trekkMaaneder,
-      maanedslonn,
-      ferietrekk,
-      feriepenger,
-      lonnstype: v.lonnstype,
-    });
+    trekk = tabellAarshjul({ ...grunnlag, maanedligTrekk, trekkMaaneder });
     trekk.tabell = tabell;
   }
 
-  const sumTrekk = trekk.sumAar;
-  const oppgjor = sumTrekk - skatt.total; // positivt = penger tilbake
+  const oppgjor = trekk.sumAar - skatt.total; // positivt = penger tilbake
   const nettoAar = personinntekt - skatt.total;
   const effektivSkatt = personinntekt > 0 ? skatt.total / personinntekt : 0;
 
+  // Hva jobben faktisk gir: netto med jobb minus netto uten jobb (etter skatt og
+  // eventuell reduksjon i uføretrygden), fordelt på arbeidstimene.
+  const utenJobbInntekt = ufore.aktiv ? ufore.fullYtelse : 0;
+  const nettoUtenJobb =
+    utenJobbInntekt - beregnSkatt({ personinntekt: utenJobbInntekt, ...alleFradrag }).total;
+  const jobbGevinst = nettoAar - nettoUtenJobb;
+  const nettoPerTime = lonn.betalteTimer > 0 ? jobbGevinst / lonn.betalteTimer : 0;
+
   return {
     innstillinger: v,
-    lonn: {
-      fulltidsAarslonn: fulltid,
-      nominellAarslonn: nominellAar,
-      maanedslonn,
-      timelonn,
-      timerAar,
-      betalteTimer,
-      ferietimer,
-      ferietrekk,
-      feriepengegrunnlag,
-      feriepenger,
-      tilleggOver60,
-      personinntekt,
-    },
+    lonn: { ...lonn, personinntekt, arbeidsinntekt: lonn.personinntekt },
+    ufore: { ...ufore, maaned: uforeMaaned },
     fradrag: {
       renteutgifter,
       fagforening,
+      reisekostnad,
       reisefradrag,
       bsuFradrag: skatt.bsuFradrag,
       rentebesparelse,
       fradragsbesparelse,
       fradragEkvivalent,
-      anbefaltTabell: anbefalt,
+      anbefaltTabell: anbefaltTabell(fradragEkvivalent),
     },
     skatt: {
       ...skatt,
@@ -316,17 +364,19 @@ export function beregn(innstillinger) {
     oppgjor,
     netto: {
       aar: nettoAar,
-      vanligMaaned: maanedslonn - trekk.vanlig,
+      vanligMaaned: trekk.vanligBrutto - trekk.vanlig,
       juni: trekk.juni.netto,
       desember: trekk.desember.netto,
-      timelonn: timelonn * (1 - effektivSkatt),
-      utbetaltAar: personinntekt - sumTrekk,
+      timelonn: lonn.timelonn * (1 - effektivSkatt),
+      perArbeidstime: nettoPerTime,
+      jobbGevinst,
+      utbetaltAar: personinntekt - trekk.sumAar,
     },
   };
 }
 
 // Tabelltrekk og «smart»: trekk i 10,5 måneder (juni trekkfri, halv skatt i desember).
-// Juni: feriepenger er trekkfrie. Bare lønn utover feriepengene får vanlig trekk.
+// Juni: feriepenger og uføretrygd er trekkfrie. Bare lønn utover feriepengene får trekk.
 // Tabeller med 12 trekkmåneder trekker også i juni og fullt i desember.
 function tabellAarshjul({
   maanedligTrekk,
@@ -334,66 +384,83 @@ function tabellAarshjul({
   maanedslonn,
   ferietrekk,
   feriepenger,
+  uforeMaaned,
   lonnstype,
 }) {
-  const andel = maanedslonn > 0 ? maanedligTrekk / maanedslonn : 0;
-  // Fastlønnede får ferietrekket i juni. Timelønnede jobber som vanlig i juni og
-  // mister lønna den måneden de faktisk har ferie (vises som «ferietrekk» i juni-kortet).
+  const vanligBrutto = maanedslonn + uforeMaaned;
+  const andel = vanligBrutto > 0 ? maanedligTrekk / vanligBrutto : 0;
   // Ferietrekket kan være større enn månedslønna (30/26) og spiser da av feriepengene.
   const lonnJuni = maanedslonn - ferietrekk;
-  const brutto = Math.max(0, lonnJuni + feriepenger);
+  const juniBrutto = Math.max(0, lonnJuni + feriepenger) + uforeMaaned;
   let juniTrekk;
   let desemberTrekk;
   if (trekkMaaneder === 12) {
-    juniTrekk = brutto * andel;
+    juniTrekk = juniBrutto * andel;
     desemberTrekk = maanedligTrekk;
   } else {
     juniTrekk = Math.max(0, lonnJuni - feriepenger) * andel;
     desemberTrekk = maanedligTrekk / 2;
   }
-  const sumAar = maanedligTrekk * 10 + juniTrekk + desemberTrekk;
   return {
     modus: 'tabell',
     vanlig: maanedligTrekk,
+    vanligBrutto,
     juni: {
       lonn: maanedslonn,
       ferietrekk,
       feriepenger,
+      ufore: uforeMaaned,
       trekk: juniTrekk,
-      netto: brutto - juniTrekk,
+      netto: juniBrutto - juniTrekk,
       lonnstype,
     },
-    desember: { lonn: maanedslonn, trekk: desemberTrekk, netto: maanedslonn - desemberTrekk },
-    sumAar,
+    desember: {
+      lonn: maanedslonn,
+      ufore: uforeMaaned,
+      trekk: desemberTrekk,
+      netto: vanligBrutto - desemberTrekk,
+    },
+    sumAar: maanedligTrekk * 10 + juniTrekk + desemberTrekk,
   };
 }
 
 // Prosenttrekk: samme prosent av alt som utbetales, også feriepenger, ingen halv skatt.
 // Frikort: ingen trekk opp til frikortgrensen, deretter 50 %.
-function prosenttrekk(v, { maanedslonn, ferietrekk, feriepenger, personinntekt }) {
-  const bruttoJuni = Math.max(0, maanedslonn - ferietrekk + feriepenger);
+function prosenttrekk(
+  v,
+  { maanedslonn, ferietrekk, feriepenger, uforeMaaned, lonnstype, personinntekt },
+) {
+  const vanligBrutto = maanedslonn + uforeMaaned;
+  const juniBrutto = Math.max(0, maanedslonn - ferietrekk + feriepenger) + uforeMaaned;
   let sats = tall(v.prosent, 0, 100) / 100;
   let frikortOver = 0;
   if (v.frikort) {
     frikortOver = Math.max(0, personinntekt - SATSER.frikortGrense);
     sats = personinntekt > 0 ? (frikortOver * SATSER.frikortTrekkOver) / personinntekt : 0;
   }
-  const vanlig = maanedslonn * sats;
-  const juniTrekk = bruttoJuni * sats;
+  const vanlig = vanligBrutto * sats;
+  const juniTrekk = juniBrutto * sats;
   return {
     modus: 'prosent',
     sats,
     frikortOver,
     vanlig,
+    vanligBrutto,
     juni: {
       lonn: maanedslonn,
       ferietrekk,
       feriepenger,
+      ufore: uforeMaaned,
       trekk: juniTrekk,
-      netto: bruttoJuni - juniTrekk,
-      lonnstype: v.lonnstype,
+      netto: juniBrutto - juniTrekk,
+      lonnstype,
     },
-    desember: { lonn: maanedslonn, trekk: vanlig, netto: maanedslonn - vanlig },
+    desember: {
+      lonn: maanedslonn,
+      ufore: uforeMaaned,
+      trekk: vanlig,
+      netto: vanligBrutto - vanlig,
+    },
     sumAar: vanlig * 11 + juniTrekk,
   };
 }
