@@ -1,0 +1,97 @@
+:root {
+  --bg: #08080a;
+  --flate: #131317;
+  --tekst: #ececf1;
+  --dempet: #9a9aa6;
+  --aksent: #4ade80;
+  --font-overskrift: "Syne", system-ui, sans-serif;
+  --font-brod: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--tekst);
+  font-family: var(--font-brod);
+  font-size: 1rem;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+.topp {
+  padding: 0.5rem 1rem;
+}
+
+.tilbake {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.25rem;
+  color: var(--dempet);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.tilbake:hover,
+.tilbake:focus-visible {
+  color: var(--aksent);
+}
+
+.innhold {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+
+.etikett {
+  margin: 0 0 0.5rem;
+  color: var(--aksent);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0 0 1rem;
+  font-family: var(--font-overskrift);
+  font-weight: 800;
+  font-size: clamp(2rem, 8vw, 3.25rem);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.ingress {
+  margin: 0;
+  color: var(--dempet);
+  font-size: 1.1rem;
+}
+
+:focus-visible {
+  outline: 2px solid var(--aksent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
