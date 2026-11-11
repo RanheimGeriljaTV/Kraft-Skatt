@@ -7,6 +7,26 @@ og prosjektet følger [Semantic Versioning](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-12
+
+### Lagt til
+
+- «Spørsmål og svar» under kalkulatoren med seks vanlige spørsmål om juni, halv skatt i
+  desember, rentefradrag, tabellnummer, uføretrygd og personvern. Tallene i svarene kommer fra
+  `satser.js`.
+- JSON-LD i `index.html`: `WebApplication` (gratis, `FinanceApplication`) og `FAQPage` med
+  nøyaktig samme tekst som vises på siden. Skrives inn av en Vite-plugin ved bygg.
+- Statisk innhold i `index.html` (h1, ingress og spørsmål og svar), så søkemotorer ser innholdet
+  uten JavaScript.
+- Avsnitt «2c. Synlighet på Google (SEO)» i `CLAUDE.md`, søkeord i `README.md` og tester for
+  SEO-reglene.
+
+### Endret
+
+- Ny tittel («Lønnskalkulator 2026 – netto lønn og skatt»), beskrivelse og Open Graph-tekst
+  med søkeordene, og h1 «Lønnskalkulator 2026».
+- Overskriften skalerer med skjermbredden, så den ikke kuttes på 375 px.
+
 ## [1.2.0] - 2026-11-11
 
 ### Endret
@@ -64,7 +84,8 @@ og prosjektet følger [Semantic Versioning](https://semver.org/lang/no/).
 - Workflow som tester, bygger og publiserer til `build`-grenen og GitHub Pages.
 - Prosjektoppsett med arbeidsregler (`CLAUDE.md`), `.gitignore` og `.gitattributes`.
 
-[Unreleased]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/releases/tag/v1.0.0

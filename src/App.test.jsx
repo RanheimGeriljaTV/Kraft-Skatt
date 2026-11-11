@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import App from './App.jsx';
 import { LAGRINGSNOKKEL } from './hooks/useLagredeValg.js';
 import { STANDARDVALG } from './utils/taxCalculator.js';
+import { SPORSMAL } from './data/sporsmal.js';
 
 // Intl bruker hardt mellomrom som tusenskille. Gjør om til vanlig mellomrom i testene.
 const vist = (el) => el.value.replace(/\s/g, ' ');
@@ -85,5 +86,18 @@ describe('App', () => {
     fireEvent.change(velger, { target: { value: '8050' } });
     expect(velger).toHaveValue('8050');
     expect(lagret().tabellnummer).toBe('8050');
+  });
+
+  it('har én h1 med hovedsøkeordet og viser spørsmål og svar', () => {
+    render(<App />);
+    const h1 = screen.getAllByRole('heading', { level: 1 });
+    expect(h1).toHaveLength(1);
+    expect(h1[0]).toHaveTextContent(/Lønnskalkulator 2026/);
+    expect(screen.getByRole('heading', { name: 'Spørsmål og svar' })).toBeInTheDocument();
+    for (const { sporsmal, svar } of SPORSMAL) {
+      expect(screen.getByRole('heading', { name: sporsmal })).toBeInTheDocument();
+      // Testing Library gjør hardt mellomrom om til vanlig mellomrom i siden, så også her.
+      expect(screen.getByText(svar.replace(/\s+/g, ' '))).toBeInTheDocument();
+    }
   });
 });

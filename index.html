@@ -6,10 +6,10 @@
     <meta name="theme-color" content="#08080a" />
     <meta name="color-scheme" content="dark" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <title>Lønn, skatt og feriepenger 2026 – kalkulator | Ranheim Kraft</title>
+    <title>Lønnskalkulator 2026 – netto lønn og skatt | Ranheim Kraft</title>
     <meta
       name="description"
-      content="Gratis kalkulator for lønn, skatt, rentefradrag og feriepenger 2026. Se netto utbetalt hver måned, i juni og i desember. Alt regnes ut i nettleseren – ingen tall sendes noe sted."
+      content="Gratis lønnskalkulator for 2026: se netto lønn hver måned, i juni med feriepenger og i desember med halv skatt. Med rentefradrag og uføretrygd."
     />
     <link rel="canonical" href="https://ranheimkraft.no/skatt/" />
     <link rel="icon" type="image/x-icon" href="./polarICON.ico" />
@@ -18,22 +18,39 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Ranheim Kraft" />
     <meta property="og:locale" content="nb_NO" />
-    <meta property="og:title" content="Lønn, skatt og feriepenger 2026" />
+    <meta property="og:title" content="Lønnskalkulator 2026 – netto lønn, skatt og feriepenger" />
     <meta
       property="og:description"
-      content="Netto lønn, skattetrekk, rentefradrag og feriepenger – regnet ut privat i nettleseren."
+      content="Gratis lønnskalkulator for 2026: se netto lønn hver måned, i juni med feriepenger og i desember med halv skatt. Med rentefradrag og uføretrygd."
     />
     <meta property="og:url" content="https://ranheimkraft.no/skatt/" />
     <meta property="og:image" content="https://ranheimkraft.no/assets/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Strukturerte data (WebApplication + FAQPage) skrives inn av vite.config.js -->
+    <!--seo:jsonld-->
   </head>
-  <body>
-    <div id="root"></div>
+  <body style="background: #08080a; color: #e4e4e7">
+    <div id="root">
+      <!-- Vises til JavaScript har lastet, og for søkemotorer. React erstatter innholdet. -->
+      <main style="max-width: 48rem; margin: 0 auto; padding: 1.5rem 1rem; font-family: sans-serif">
+        <a href="../" style="color: #a1a1aa">← Ranheim Kraft</a>
+        <h1>Lønnskalkulator 2026 – netto lønn, skatt og feriepenger</h1>
+        <p>
+          Gratis lønnskalkulator som viser hva du faktisk får utbetalt i en vanlig måned, i juni med
+          feriepenger og i desember med halv skatt. Regn ut rentefradrag, tabelltrekk og hva jobben
+          gir deg ved siden av uføretrygd. Alt regnes ut i nettleseren.
+        </p>
+        <h2>Spørsmål og svar</h2>
+        <!--seo:sporsmal-->
+      </main>
+    </div>
     <noscript>
-      <p style="padding: 2rem; color: #e4e4e7; font-family: sans-serif">
-        Kalkulatoren trenger JavaScript. Slå det på i nettleseren for å bruke den.
+      <p style="padding: 0 1rem 2rem; max-width: 48rem; margin: 0 auto; font-family: sans-serif">
+        Kalkulatoren trenger JavaScript. Slå det på i nettleseren for å regne ut netto lønn, skatt
+        og feriepenger.
       </p>
     </noscript>
     <script type="module" src="./src/main.jsx"></script>

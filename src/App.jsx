@@ -6,6 +6,7 @@ import SummaryCards from './components/SummaryCards.jsx';
 import YearlyPayouts from './components/YearlyPayouts.jsx';
 import TaxBreakdown from './components/TaxBreakdown.jsx';
 import MobileBar from './components/MobileBar.jsx';
+import Sporsmal from './components/Sporsmal.jsx';
 import { useLagredeValg } from './hooks/useLagredeValg.js';
 import { beregn } from './utils/taxCalculator.js';
 import { AAR } from './utils/satser.js';
@@ -28,15 +29,18 @@ export default function App() {
         </a>
         <div className="mt-2 mb-5">
           <p className="font-mono text-[11px] uppercase tracking-widest text-accent">
-            Kalkulator · skatteåret {AAR}
+            Gratis · skatteåret {AAR}
           </p>
-          <h1 className="mt-1 font-syne text-3xl leading-tight font-extrabold text-white sm:text-5xl">
-            Lønn, skatt og feriepenger
+          <h1 className="mt-1 font-syne text-[clamp(1.5rem,7vw,3rem)] leading-tight font-extrabold [overflow-wrap:anywhere] text-white">
+            Lønnskalkulator {AAR}
+            <span className="mt-1 block text-xl font-bold text-zinc-300 sm:text-2xl">
+              Netto lønn, skatt og feriepenger
+            </span>
           </h1>
           <p className="mt-2 max-w-2xl text-zinc-400">
-            Se hva du faktisk får utbetalt hver måned, i juni og i desember, og hvor mye gjelden din
-            sparer deg i skatt. Mottar du uføretrygd, ser du også hva jobben gir deg etter skatt og
-            reduksjon.
+            Se hva du faktisk får utbetalt i en vanlig måned, i juni med feriepenger og i desember
+            med halv skatt, og hvor mye rentefradraget sparer deg. Mottar du uføretrygd, ser du også
+            hva jobben gir deg etter skatt og reduksjon.
           </p>
         </div>
       </header>
@@ -63,6 +67,8 @@ export default function App() {
             <TaxBreakdown resultat={resultat} />
           </div>
         </div>
+
+        <Sporsmal />
       </main>
 
       <footer className="mx-auto max-w-7xl px-4 pb-8 text-xs leading-relaxed text-zinc-500 sm:px-6">

@@ -9,6 +9,29 @@ skatt og redusert uføretrygd.
 - **Forhåndsvisning:** <https://ranheimgeriljatv.github.io/Kraft-Skatt/>
 - **Teknologi:** React 19, Vite, Tailwind CSS 4 og Lucide React (JavaScript)
 
+## Søkeord
+
+Siden skal vinne disse søkene. De brukes i `<title>`, `<h1>`, beskrivelsen og i «Spørsmål og
+svar»:
+
+1. lønnskalkulator 2026
+2. netto lønn kalkulator
+3. feriepenger juni utbetaling
+4. halv skatt desember
+5. uføretrygd og jobb kalkulator
+
+## Synlighet på Google
+
+- `index.html` har tittel, beskrivelse, canonical (`https://ranheimkraft.no/skatt/`) og Open
+  Graph, og et statisk utdrag (h1, ingress og spørsmål og svar) i `#root` som React erstatter.
+  Søkemotorer ser altså innholdet uten JavaScript.
+- Spørsmål og svar ligger i [`src/data/sporsmal.js`](src/data/sporsmal.js). Samme tekst vises
+  under kalkulatoren og legges i JSON-LD (`WebApplication` og `FAQPage`) av en liten Vite-plugin
+  i `vite.config.js` ([`src/data/seo.js`](src/data/seo.js)). Tallene i svarene kommer fra
+  `satser.js`.
+- `src/data/seo.test.js` sjekker lengden på tittel og beskrivelse, canonical, Open Graph, én h1
+  og at FAQ-teksten i JSON-LD er lik den som vises.
+
 ## Personvern
 
 Alt regnes ut i nettleseren. Appen gjør ingen API-kall, og fontene ligger i bygget, så ingen
@@ -94,6 +117,9 @@ npm run build        # bygger til dist/
 | `src/components/YearlyPayouts.jsx` | Årshjulet: vanlig måned, juni og desember                          |
 | `src/components/TaxBreakdown.jsx`  | Utregningen steg for steg                                          |
 | `src/components/MobileBar.jsx`     | Fast bunnlinje på mobil                                            |
+| `src/components/Sporsmal.jsx`      | «Spørsmål og svar» under kalkulatoren                              |
+| `src/data/sporsmal.js`             | Spørsmålene og svarene (felles for side og JSON-LD)                |
+| `src/data/seo.js`                  | JSON-LD og statisk innhold som skrives inn i index.html            |
 
 ## Publisering
 

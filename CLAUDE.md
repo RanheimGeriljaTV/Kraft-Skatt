@@ -43,6 +43,21 @@ Er dette en ny mappe, gjør dette før noe annet (og hopp over det som allerede 
 - Ikke legg inn Umami selv. Synk-skriptet på ranheimkraft.no legger inn riktig Umami-ID automatisk. Vil du telle knappetrykk, bruk `data-umami-event="skatt_…"` på elementet.
 - Eksterne skript og biblioteker hentes med fast versjonsnummer (f.eks. `@3.4.17`), ikke «latest».
 
+## 2c. Synlighet på Google (SEO)
+
+Målet er å vinne presise søk folk faktisk skriver (f.eks. «stekeovn til airfryer omregning»), ikke brede ord som store aktører eier.
+
+- **Søkeord:** Skriv ned 3–5 søk siden skal vinne i `README.md` (avsnitt «Søkeord»), og bruk dem i tittel, overskrift og tekst.
+- **`<title>`:** Hva siden gjør med søkeordene først, så `| Ranheim Kraft`. Maks ca. 60 tegn. Eksempel: `Stekeovn til airfryer – omregning av tid og temperatur | Ranheim Kraft`.
+- **`<meta name="description">`:** 120–155 tegn som svarer på søket og sier at det er gratis.
+- **`<link rel="canonical" href="https://ranheimkraft.no/skatt/">`** (med avsluttende `/`), og `<html lang="no">`.
+- **Open Graph:** `og:title`, `og:description`, `og:url`, `og:type` (`website`), `og:locale` (`nb_NO`) og `og:image` (1200 × 630, eller `https://ranheimkraft.no/assets/og-image.png`).
+- **Én `<h1>`** med hovedsøkeordet. Tittelen og innholdet må finnes i HTML-en som lastes, ikke bare etter JavaScript. I Vite: skriv `title`, `meta` og en kort `<noscript>`-tekst rett i `index.html`.
+- **Forklarende tekst:** Under verktøyet skal det være en kort seksjon «Spørsmål og svar» med 3–6 spørsmål folk søker på, med svar på 1–3 setninger. Kalkulatorer uten tekst rangerer dårlig.
+- **JSON-LD** i `<head>`: `WebApplication` med `name`, `url`, `description`, `applicationCategory` (f.eks. `UtilitiesApplication`, `FinanceApplication`, `GameApplication`), `operatingSystem: "Any"`, `inLanguage: "nb"` og `offers` med `price: "0"` og `priceCurrency: "NOK"`. Har siden spørsmål og svar, legg også til `FAQPage` med de samme spørsmålene (teksten må være lik den som vises).
+- **Ytelse og mobil:** Bilder i WebP med `width` og `height`, `loading="lazy"` under bretten, og ingen tunge skript før innholdet vises.
+- **Ny side eller ny adresse:** Si fra i nettsidens økt, så legges den i `sitemap.xml`. Be deretter om indeksering i Google Search Console.
+
 ## 3. Hemmeligheter
 
 - Ingen hemmeligheter (API-nøkler, tokens, passord) skal noen gang committes.
