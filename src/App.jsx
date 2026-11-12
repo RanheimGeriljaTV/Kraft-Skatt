@@ -56,9 +56,7 @@ export default function App() {
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
           <div className="lg:col-span-5">
-            <div className="lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:[scrollbar-color:var(--color-zinc-700)_transparent] lg:[scrollbar-width:thin]">
-              <InputPanel key={skjemaNokkel} valg={valg} oppdater={oppdater} resultat={resultat} />
-            </div>
+            <InputPanel key={skjemaNokkel} valg={valg} oppdater={oppdater} resultat={resultat} />
           </div>
 
           <div className="space-y-5 lg:col-span-7">
@@ -71,7 +69,7 @@ export default function App() {
         <Sporsmal />
       </main>
 
-      <footer className="mx-auto max-w-7xl px-4 pb-8 text-xs leading-relaxed text-zinc-400 sm:px-6">
+      <footer className="mx-auto max-w-7xl px-4 pb-24 text-xs leading-relaxed text-zinc-400 sm:px-6">
         <p>
           Beregningen er et estimat basert på skattesatsene for {AAR} for en enslig lønnsmottaker
           bosatt utenfor Finnmark og Nord-Troms. Tabelltrekket er regnet etter Skatteetatens

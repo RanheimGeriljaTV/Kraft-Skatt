@@ -7,6 +7,19 @@ og prosjektet følger [Semantic Versioning](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-11-12
+
+### Rettet
+
+- Venstre kolonne (steg A, B osv.) på PC har ikke lenger en egen scrollboks. Den var
+  «sticky» med egen scrolling, så musehjulet ble fanget i kolonnen og siden var vanskelig å
+  scrolle. Nå scroller hele siden i ett stykke.
+
+### Endret
+
+- Den faste bunnlinjen med netto per måned og effektiv skatt vises nå også på PC, så
+  nøkkeltallene er synlige mens man fyller ut skjemaet.
+
 ## [1.5.0] - 2026-11-12
 
 Fase 3 fra kodegjennomgangen og QA-runden
@@ -184,7 +197,8 @@ oppfølgerne kommer i senere versjoner.
 - Workflow som tester, bygger og publiserer til `build`-grenen og GitHub Pages.
 - Prosjektoppsett med arbeidsregler (`CLAUDE.md`), `.gitignore` og `.gitattributes`.
 
-[Unreleased]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.3.0...v1.3.1

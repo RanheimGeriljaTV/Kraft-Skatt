@@ -1,14 +1,14 @@
 import { kr, prosent } from '../utils/format.js';
 
-/** Fast linje nederst på mobil, så nøkkeltallene alltid er synlige mens man justerer. */
+/** Fast linje nederst, så nøkkeltallene alltid er synlige mens man justerer (mobil og PC). */
 export default function MobileBar({ resultat }) {
   return (
     <section
       aria-label="Netto utbetalt og effektiv skatt"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-brand-dark/95 px-4 pt-2 backdrop-blur lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-brand-dark/95 px-4 pt-2 backdrop-blur sm:px-6"
       style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
     >
-      <div className="mx-auto flex max-w-xl items-center justify-between gap-4">
+      <div className="mx-auto flex max-w-xl items-center lg:max-w-7xl lg:px-2 justify-between gap-4">
         <div className="min-w-0">
           <p className="font-mono text-[10px] uppercase tracking-widest text-zinc-400">
             Netto utbetalt / mnd

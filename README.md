@@ -60,7 +60,9 @@ Nullstill» tømmer lagringen og setter alle felter tilbake.
   grunnlag opptil 6 G.
 - **Resultat:** fire nøkkelkort, fordelingsbar, årshjul (vanlig måned, juni og desember) og
   en detaljert utregning.
-- **Mobil:** stablet oppsett med fast bunnlinje som viser netto per måned og effektiv skatt.
+- **Oppsett:** skjema til venstre og resultater til høyre på PC, stablet på mobil. Siden scroller
+  i ett stykke (ingen egen scrollboks i skjemaet). Fast bunnlinje på alle skjermer viser netto
+  per måned og effektiv skatt.
 
 ## Skattemodellen (2026)
 
@@ -150,7 +152,7 @@ npm run build        # bygger til dist/
 | `src/components/SummaryCards.jsx`  | Fire nøkkelkort og fordelingsbar                                       |
 | `src/components/YearlyPayouts.jsx` | Årshjulet: vanlig måned, juni og desember                              |
 | `src/components/TaxBreakdown.jsx`  | Utregningen steg for steg                                              |
-| `src/components/MobileBar.jsx`     | Fast bunnlinje på mobil                                                |
+| `src/components/MobileBar.jsx`     | Fast bunnlinje                                                         |
 | `src/components/Sporsmal.jsx`      | «Spørsmål og svar» under kalkulatoren                                  |
 | `src/data/sporsmal.js`             | Spørsmålene og svarene (felles for side og JSON-LD)                    |
 | `src/data/seo.js`                  | JSON-LD og statisk innhold som skrives inn i index.html                |
