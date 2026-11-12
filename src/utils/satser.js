@@ -62,6 +62,24 @@ export const SATSER = {
   uforeMinsteYtelseEnsligG: 2.529,
 };
 
+// Skatteetatens trekkrutine for tabelltrekk (inntektsåret 2026). Tabellene er bygget med
+// litt andre forutsetninger enn selve skatteberegningen, så trekket avviker fra årsskatten
+// delt på 10,5. Reglene er hentet fra Skatteetatens publiserte beskrivelse av trekkrutinen
+// (github.com/Skatteetaten/trekktabell, pakke trekkrutine2026), skrevet på nytt her.
+// Prosentsatser står som prosent (13,75) og ikke andel (0,1375), som i rutinen, så avrundingen
+// blir lik.
+export const TREKKTABELL = {
+  avrunding: 100, // trekkgrunnlaget rundes ned til hele 100 kr ...
+  avrundingTillegg: 50, // ... og det legges til 50 kr (midt i intervallet)
+  inntektsfaktorVanlig: 12.12, // 8000- og 9000-tabellene: månedlig grunnlag × 12,12 = årsinntekt
+  inntektsfaktorAnnen: 12, // spesialtabellene: månedlig grunnlag × 12
+  minstefradragPst: 40.48, // lavere enn de 46 % som gjelder ved skatteoppgjøret
+  minstefradragMaks: 84_216,
+  kommunePst: 13.75, // kommuneskatt + fellesskatt = 22 % skatt på alminnelig inntekt
+  fellesPst: 8.25,
+  trygdePst: { hoy: 7.6, lav: 5.1 },
+};
+
 // Ferieavtaler. Virkedager regnes mandag–lørdag (6 per uke), som i ferieloven.
 export const FERIEAVTALER = {
   fem: { navn: '5 uker (12 %)', kort: '5 uker', sats: 0.12, virkedager: 30, tilleggOver60: 0 },

@@ -7,6 +7,38 @@ og prosjektet følger [Semantic Versioning](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-12
+
+Retter [#1](https://github.com/RanheimGeriljaTV/Kraft-Skatt/issues/1) M1 og
+[#2](https://github.com/RanheimGeriljaTV/Kraft-Skatt/issues/2) Q1.
+
+### Rettet
+
+- Tabelltrekket regnes nå etter Skatteetatens trekkrutine for 2026 i stedet for årsskatt delt på
+  10,5. Tabell 8000 ved 50 000 kr i måneden gir 14 184 kr i trekk (var 13 968 kr), og appen
+  melder at du får ca. 2 270 kr tilbake ved skatteoppgjøret. Avviket var 120–240 kr i måneden
+  for alle tabeller i 8000- og 9000-seriene, og 21–72 kr for 7150, 7160 og 7170.
+- Nav-delen av uføretrygden bruker samme rutine.
+- Juni regnes som tabelltrekk av lønn etter ferietrekk (feriepengene er trekkfrie), i stedet
+  for en egen formel som tilfeldigvis ga 0 kr. 12-månederstabeller trekker av lønn og
+  feriepenger i juni og fullt i desember.
+
+### Lagt til
+
+- `src/utils/trekktabell.js` med trekkrutinen, og konstantene i `satser.js`.
+- Anbefalt tabell finnes nå ved å prøve alle tabellene 8000–8400 og 9010–9400 og velge den
+  som gir minst restskatt eller penger tilbake. Uten fradrag er det ofte 8010, ikke 8000.
+- «Smart» viser hva anbefalt tabell trekker på lønnsslippen mot det ideelle trekket. «Tabell»
+  viser hvor mye trekket avviker fra det ideelle, per måned.
+- Tester mot Skatteetatens verdier (fem rader i tabell 8000) og tre spesialtabeller regnet for
+  hånd, og egenskapstester for avrunding, fradrag og tillegg.
+
+### Endret
+
+- Fotnote og svaret om tabellnummer beskriver at trekket regnes som i Skatteetatens tabeller.
+- `beregnSkatt` har ikke lenger parametrene `tillegg` og `medTrygdeavgift`, som bare tabellene
+  brukte.
+
 ## [1.3.1] - 2026-11-12
 
 Rettinger fra fase 1 i kodegjennomgangen og QA-runden
@@ -117,7 +149,8 @@ oppfølgerne kommer i senere versjoner.
 - Workflow som tester, bygger og publiserer til `build`-grenen og GitHub Pages.
 - Prosjektoppsett med arbeidsregler (`CLAUDE.md`), `.gitignore` og `.gitattributes`.
 
-[Unreleased]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.1.0...v1.2.0

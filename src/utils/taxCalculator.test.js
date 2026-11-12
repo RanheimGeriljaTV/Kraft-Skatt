@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  alleTabeller,
-  anbefaltTabell,
   beregn,
   beregnSkatt,
   formuesskatt,
@@ -9,10 +7,10 @@ import {
   beregnUfore,
   konverterBelop,
   minstefradrag,
-  tolkTabell,
   trinnskatt,
   trygdeavgift,
 } from './taxCalculator.js';
+import { tabelltrekk } from './trekktabell.js';
 
 describe('lønn', () => {
   it('månedslønn og årslønn er det du faktisk tjener, uansett stilling', () => {
@@ -82,26 +80,6 @@ describe('skattegrunnlag 2026', () => {
   });
 });
 
-describe('tabeller', () => {
-  it('tolker 8000-, 9000- og spesialtabeller', () => {
-    expect(tolkTabell('8050')).toMatchObject({ gyldig: true, fradrag: 50_000, maaneder: 10.5 });
-    expect(tolkTabell('9120')).toMatchObject({ gyldig: true, tillegg: 120_000 });
-    expect(tolkTabell('7150')).toMatchObject({ gyldig: true, maaneder: 12, trygd: true });
-    expect(tolkTabell('7100').gyldig).toBe(false);
-  });
-
-  it('anbefaler riktig tabell', () => {
-    expect(anbefaltTabell(0)).toBe('8000');
-    expect(anbefaltTabell(55_000)).toBe('8050');
-    expect(anbefaltTabell(9_000_000)).toBe('8400');
-    expect(anbefaltTabell(-30_000)).toBe('9030');
-  });
-
-  it('har 41 + 40 + 3 tabeller', () => {
-    expect(alleTabeller()).toHaveLength(84);
-  });
-});
-
 describe('hele året', () => {
   const grunn = { lonnBasis: 'maaned', belop: 50_000, ferie: 'fem' };
 
@@ -151,7 +129,20 @@ describe('hele året', () => {
     const r = beregn({ ...grunn, gjeld: 2_000_000, rente: 5 });
     expect(r.fradrag.renteutgifter).toBe(100_000);
     expect(r.fradrag.rentebesparelse).toBeCloseTo(22_000, 5);
-    expect(r.fradrag.anbefaltTabell).toBe('8100');
+  });
+
+  it('anbefalt tabell er den som gir minst restskatt eller penger tilbake', () => {
+    const med = { ...grunn, gjeld: 2_000_000, rente: 5 };
+    const r = beregn(med);
+    const avvik = (nr) =>
+      Math.abs(beregn({ ...med, skattemodus: 'tabell', tabellnummer: nr }).oppgjor);
+    const beste = r.fradrag.anbefaltTabell;
+    // 100 000 kr i renter gir fradrag rundt 8100, og tabellene trekker litt for mye uten fradrag.
+    expect(Number(beste)).toBeGreaterThanOrEqual(8100);
+    for (const nabo of [Number(beste) - 10, Number(beste) + 10]) {
+      expect(avvik(beste)).toBeLessThanOrEqual(avvik(String(nabo)));
+    }
+    expect(avvik(beste)).toBeLessThan(1_000);
   });
 
   it('rentefradraget gir mer utbetalt i en vanlig måned bare i smart-modus', () => {
@@ -216,13 +207,46 @@ describe('hele året', () => {
   it('fradrag øker netto per måned i smart-modus, men ikke med tabelltrekk', () => {
     const uten = beregn(grunn);
     const smart = beregn({ ...grunn, fagforening: 8_700 });
+    const tabellUten = beregn({ ...grunn, skattemodus: 'tabell' });
     const tabell = beregn({ ...grunn, fagforening: 8_700, skattemodus: 'tabell' });
     expect(smart.netto.vanligMaaned - uten.netto.vanligMaaned).toBeCloseTo(
       (8_700 * 0.22) / 10.5,
       5,
     );
-    expect(tabell.netto.vanligMaaned).toBeCloseTo(uten.netto.vanligMaaned, 5);
-    expect(tabell.oppgjor).toBeCloseTo(8_700 * 0.22, 5);
+    expect(tabell.netto.vanligMaaned).toBe(tabellUten.netto.vanligMaaned);
+    expect(tabell.oppgjor - tabellUten.oppgjor).toBeCloseTo(8_700 * 0.22, 5);
+  });
+
+  it('tabelltrekk følger Skatteetatens trekkrutine: 14 184 kr i tabell 8000 ved 50 000 kr', () => {
+    const r = beregn({ ...grunn, skattemodus: 'tabell', tabellnummer: '8000' });
+    expect(r.trekk.vanlig).toBe(14_184);
+    expect(r.netto.vanligMaaned).toBe(50_000 - 14_184);
+    expect(r.trekk.juni.trekk).toBe(0);
+    expect(r.trekk.desember.trekk).toBe(7_092);
+    // Tabellen trekker mer enn årsskatten: 10 × 14 184 + 7 092 mot ca. 146 664 kr i skatt.
+    expect(r.oppgjor).toBeGreaterThan(2_200);
+    expect(r.oppgjor).toBeLessThan(2_300);
+  });
+
+  it('smart viser det ideelle trekket og hva anbefalt tabell gir', () => {
+    const r = beregn(grunn);
+    expect(r.trekk.vanlig).toBeCloseTo(r.skatt.total / 10.5, 5);
+    expect(r.anbefaling.idealTrekk).toBeCloseTo(r.skatt.total / 10.5, 5);
+    expect(r.anbefaling.valgtTrekk).toBeCloseTo(r.anbefaling.idealTrekk, 5);
+    expect(r.anbefaling.tabellTrekk).toBe(tabelltrekk(r.anbefaling.tabell, 50_000));
+    // Anbefalt tabell ligger nærmere årsskatten enn 8000, som gir for høyt trekk uten fradrag.
+    const avvik = (nr) =>
+      Math.abs(beregn({ ...grunn, skattemodus: 'tabell', tabellnummer: nr }).oppgjor);
+    expect(avvik(r.anbefaling.tabell)).toBeLessThan(avvik('8000'));
+  });
+
+  it('12-månederstabell trekker også i juni (av lønn og feriepenger) og fullt i desember', () => {
+    const r = beregn({ ...grunn, skattemodus: 'tabell', tabellnummer: '7150' });
+    expect(r.trekk.vanlig).toBe(12_243);
+    expect(r.trekk.desember.trekk).toBe(12_243);
+    const juniBrutto = 50_000 - r.lonn.ferietrekk + r.lonn.feriepenger;
+    expect(r.trekk.juni.trekk).toBe(tabelltrekk('7150', juniBrutto));
+    expect(r.trekk.juni.trekk).toBeGreaterThan(0);
   });
 
   it('håndterer null og ugyldige tall uten NaN', () => {
@@ -300,10 +324,9 @@ describe('uføretrygd', () => {
   it('tabellmodus: Nav bruker tabellen på uføretrygden, arbeidsgiveren prosentsatsen', () => {
     const r = beregn({ ...ufor, belop: 10_000, stilling: 30, skattemodus: 'tabell', prosent: 35 });
     expect(r.trekk.arbeidsgiverSats).toBeCloseTo(0.35, 5);
-    expect(r.trekk.navMaanedlig * 10.5).toBeCloseTo(
-      beregnSkatt({ personinntekt: 339_900 }).total,
-      5,
-    );
+    expect(r.trekk.navMaanedlig).toBe(tabelltrekk('8000', 339_900 / 12));
+    expect(r.trekk.juni.trekkUfore).toBe(0);
+    expect(r.trekk.desember.trekkUfore).toBe(Math.round(r.trekk.navMaanedlig / 2));
   });
 
   it('netto per arbeidstime tar hensyn til skatt og redusert uføretrygd', () => {

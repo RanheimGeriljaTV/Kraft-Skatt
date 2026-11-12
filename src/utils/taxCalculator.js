@@ -2,6 +2,7 @@
 // Ingen avhengigheter til React eller nettleseren, så alt kan testes isolert.
 
 import { ARBEIDSUKER, FERIEAVTALER, SATSER } from './satser.js';
+import { besteTabell, tabelltrekk, tolkTabell } from './trekktabell.js';
 
 export const STANDARDVALG = {
   lonnBasis: 'maaned', // 'time' | 'maaned' | 'aar'
@@ -171,24 +172,15 @@ export function formuesskatt(nettoformue) {
  * @param {object} p
  * @param {number} p.personinntekt  lønn + feriepenger
  * @param {number} [p.fradrag]      fradrag i alminnelig inntekt (renter, fagforening, reise …)
- * @param {number} [p.tillegg]      tillegg i alminnelig inntekt (9000-tabellene)
  * @param {number} [p.bsuFradrag]   skattefradrag for BSU (kr direkte av skatten)
  * @param {number} [p.formue]       netto formue
- * @param {boolean} [p.medTrygdeavgift]
  */
-export function beregnSkatt({
-  personinntekt,
-  fradrag = 0,
-  tillegg = 0,
-  bsuFradrag = 0,
-  formue = 0,
-  medTrygdeavgift = true,
-}) {
+export function beregnSkatt({ personinntekt, fradrag = 0, bsuFradrag = 0, formue = 0 }) {
   const pi = Math.max(0, personinntekt);
   const minste = minstefradrag(pi);
-  const alminneligInntekt = pi - minste - SATSER.personfradrag - fradrag + tillegg;
+  const alminneligInntekt = pi - minste - SATSER.personfradrag - fradrag;
   const skattAlminnelig = Math.max(0, alminneligInntekt) * SATSER.skattAlminnelig;
-  const trygd = medTrygdeavgift ? trygdeavgift(pi) : 0;
+  const trygd = trygdeavgift(pi);
   const trinn = trinnskatt(pi);
   const formuesSkatt = formuesskatt(formue);
   const forBsu = skattAlminnelig + trygd + trinn + formuesSkatt;
@@ -203,49 +195,6 @@ export function beregnSkatt({
     bsuFradrag: bsu,
     total: forBsu - bsu,
   };
-}
-
-// ---------------------------------------------------------------------------
-// Tabelltrekk
-// ---------------------------------------------------------------------------
-
-export const SPESIALTABELLER = {
-  7150: { navn: '7150 – 12 mnd trekk, ingen fradrag', maaneder: 12, trygd: true },
-  7160: { navn: '7160 – 12 mnd trekk, uten trygdeavgift', maaneder: 12, trygd: false },
-  7170: { navn: '7170 – 10,5 mnd trekk, uten trygdeavgift', maaneder: 10.5, trygd: false },
-};
-
-/** Alle gyldige tabellnummer: 8000–8400 (fradrag), 9010–9400 (tillegg) og 7150/7160/7170. */
-export function alleTabeller() {
-  const liste = [];
-  for (let n = 8000; n <= 8400; n += 10) liste.push(String(n));
-  for (let n = 9010; n <= 9400; n += 10) liste.push(String(n));
-  return liste.concat(Object.keys(SPESIALTABELLER));
-}
-
-/** Hva en tabell forutsetter: fradrag/tillegg i alminnelig inntekt, trekkmåneder og trygdeavgift. */
-export function tolkTabell(nummer) {
-  const n = Number(nummer);
-  if (SPESIALTABELLER[n]) {
-    return { gyldig: true, fradrag: 0, tillegg: 0, ...SPESIALTABELLER[n] };
-  }
-  if (n >= 8000 && n <= 8400 && n % 10 === 0) {
-    return { gyldig: true, fradrag: (n - 8000) * 1000, tillegg: 0, maaneder: 10.5, trygd: true };
-  }
-  if (n >= 9010 && n <= 9400 && n % 10 === 0) {
-    return { gyldig: true, fradrag: 0, tillegg: (n - 9000) * 1000, maaneder: 10.5, trygd: true };
-  }
-  return { gyldig: false, fradrag: 0, tillegg: 0, maaneder: 10.5, trygd: true };
-}
-
-/** Tabellen som passer best til et fradrag (positivt) eller tillegg (negativt fradrag). */
-export function anbefaltTabell(fradragEkvivalent) {
-  if (fradragEkvivalent >= 0) {
-    const steg = Math.min(40, Math.floor(fradragEkvivalent / 10_000));
-    return String(8000 + steg * 10);
-  }
-  const steg = Math.min(40, Math.max(1, Math.round(-fradragEkvivalent / 10_000)));
-  return String(9000 + steg * 10);
 }
 
 // ---------------------------------------------------------------------------
@@ -309,12 +258,24 @@ export function beregn(innstillinger, { utenRekursjon = false } = {}) {
   const skattBareUfore = ufore.aktiv
     ? beregnSkatt({ personinntekt: ufore.utbetalt, ...alleFradrag }).total
     : 0;
+  const lonnJuni = lonn.maanedslonn - lonn.ferietrekk;
+
+  // Tabellen slår opp på det som utbetales hver måned. Med uføretrygd trekker Nav etter
+  // tabellen av uføretrygden alene, og arbeidsgiveren trekker prosent av lønna.
+  const trekkMaal = ufore.aktiv ? skattBareUfore : skatt.total;
+  const tabellGrunnlag = ufore.aktiv ? uforeMaaned : lonn.maanedslonn;
+  const aarsTrekkTabell = (nummer) => {
+    const maaned = tabelltrekk(nummer, tabellGrunnlag);
+    const juni = ufore.aktiv ? 0 : tabelltrekk(nummer, Math.max(0, lonnJuni));
+    return maaned * 10 + juni + Math.round(maaned / 2); // 10,5 trekkmåneder
+  };
+  const anbefaltTabell = besteTabell(trekkMaal, aarsTrekkTabell);
+
   let trekk;
   if (ufore.aktiv) {
     trekk = uforeTrekk(v, {
       ...grunnlag,
       arbeidsinntekt: lonn.personinntekt,
-      uforeAar: ufore.utbetalt,
       skattTotal: skatt.total,
       skattBareUfore,
       personinntekt,
@@ -322,23 +283,39 @@ export function beregn(innstillinger, { utenRekursjon = false } = {}) {
   } else if (v.skattemodus === 'prosent') {
     trekk = prosenttrekk(v, { ...grunnlag, personinntekt });
   } else {
-    let maanedligTrekk = skatt.total / 10.5;
-    let trekkMaaneder = 10.5;
-    let tabell = null;
-    if (v.skattemodus === 'tabell') {
-      tabell = tolkTabell(v.tabellnummer);
-      const tabellSkatt = beregnSkatt({
-        personinntekt,
-        fradrag: tabell.fradrag,
-        tillegg: tabell.tillegg,
-        medTrygdeavgift: tabell.trygd,
-      });
-      trekkMaaneder = tabell.maaneder;
-      maanedligTrekk = tabellSkatt.total / trekkMaaneder;
+    const tabell = v.skattemodus === 'tabell' ? tolkTabell(v.tabellnummer) : null;
+    let vanlig;
+    let juniTrekk;
+    let desemberTrekk;
+    if (!tabell) {
+      // Smart: det ideelle trekket, jevnt over 10,5 måneder. Gir null i restskatt.
+      vanlig = skatt.total / 10.5;
+      juniTrekk = 0;
+      desemberTrekk = vanlig / 2;
+    } else {
+      vanlig = tabelltrekk(v.tabellnummer, lonn.maanedslonn);
+      if (tabell.maaneder === 12) {
+        // 12-månederstabeller trekker også av feriepengene i juni, og fullt i desember.
+        juniTrekk = tabelltrekk(v.tabellnummer, Math.max(0, lonnJuni + lonn.feriepenger));
+        desemberTrekk = vanlig;
+      } else {
+        // Feriepengene er trekkfrie. Bare lønn etter ferietrekket får trekk i juni.
+        juniTrekk = tabelltrekk(v.tabellnummer, Math.max(0, lonnJuni));
+        desemberTrekk = Math.round(vanlig / 2);
+      }
     }
-    trekk = tabellAarshjul({ ...grunnlag, maanedligTrekk, trekkMaaneder });
+    trekk = tabellAarshjul({ ...grunnlag, vanlig, juniTrekk, desemberTrekk });
     trekk.tabell = tabell;
   }
+
+  // Hva tabellen vi anbefaler gir, mot det ideelle trekket (for Nav-delen med uføretrygd).
+  const anbefaling = {
+    tabell: anbefaltTabell,
+    tabellTrekk: tabelltrekk(anbefaltTabell, tabellGrunnlag),
+    idealTrekk: trekkMaal / 10.5,
+    valgtTrekk: ufore.aktiv ? trekk.navMaanedlig : trekk.vanlig,
+    gjelderNav: ufore.aktiv,
+  };
 
   const oppgjor = trekk.sumAar - skatt.total; // positivt = penger tilbake
   const vanligMaaned = trekk.vanligBrutto - trekk.vanlig;
@@ -376,7 +353,7 @@ export function beregn(innstillinger, { utenRekursjon = false } = {}) {
       rentebesparelseMaaned,
       fradragsbesparelse,
       fradragEkvivalent,
-      anbefaltTabell: anbefaltTabell(fradragEkvivalent),
+      anbefaltTabell,
       // Prosenttrekk hos arbeidsgiveren når Nav trekker skatten på uføretrygden alene.
       anbefaltBikort:
         ufore.aktiv && lonn.personinntekt > 0
@@ -389,6 +366,7 @@ export function beregn(innstillinger, { utenRekursjon = false } = {}) {
       utenFradrag: skattUtenFradrag.total,
     },
     trekk,
+    anbefaling,
     oppgjor,
     netto: {
       aar: nettoAar,
@@ -403,12 +381,11 @@ export function beregn(innstillinger, { utenRekursjon = false } = {}) {
   };
 }
 
-// Tabelltrekk og «smart»: trekk i 10,5 måneder (juni trekkfri, halv skatt i desember).
-// Juni: feriepenger og uføretrygd er trekkfrie. Bare lønn utover feriepengene får trekk.
-// Tabeller med 12 trekkmåneder trekker også i juni og fullt i desember.
+// Årshjul for tabelltrekk og «smart»: vanlig måned, juni og desember med ferdig utregnet trekk.
 function tabellAarshjul({
-  maanedligTrekk,
-  trekkMaaneder,
+  vanlig,
+  juniTrekk,
+  desemberTrekk,
   maanedslonn,
   ferietrekk,
   feriepenger,
@@ -416,22 +393,11 @@ function tabellAarshjul({
   lonnstype,
 }) {
   const vanligBrutto = maanedslonn + uforeMaaned;
-  const andel = vanligBrutto > 0 ? maanedligTrekk / vanligBrutto : 0;
   // Ferietrekket kan være større enn månedslønna (30/26) og spiser da av feriepengene.
-  const lonnJuni = maanedslonn - ferietrekk;
-  const juniBrutto = Math.max(0, lonnJuni + feriepenger) + uforeMaaned;
-  let juniTrekk;
-  let desemberTrekk;
-  if (trekkMaaneder === 12) {
-    juniTrekk = juniBrutto * andel;
-    desemberTrekk = maanedligTrekk;
-  } else {
-    juniTrekk = Math.max(0, lonnJuni - feriepenger) * andel;
-    desemberTrekk = maanedligTrekk / 2;
-  }
+  const juniBrutto = Math.max(0, maanedslonn - ferietrekk + feriepenger) + uforeMaaned;
   return {
     modus: 'tabell',
-    vanlig: maanedligTrekk,
+    vanlig,
     vanligBrutto,
     juni: {
       lonn: maanedslonn,
@@ -448,7 +414,7 @@ function tabellAarshjul({
       trekk: desemberTrekk,
       netto: vanligBrutto - desemberTrekk,
     },
-    sumAar: maanedligTrekk * 10 + juniTrekk + desemberTrekk,
+    sumAar: vanlig * 10 + juniTrekk + desemberTrekk,
   };
 }
 
@@ -469,7 +435,6 @@ function uforeTrekk(
     uforeMaaned,
     lonnstype,
     arbeidsinntekt,
-    uforeAar,
     skattTotal,
     skattBareUfore,
     personinntekt,
@@ -492,14 +457,8 @@ function uforeTrekk(
     arbeidsgiverSats = sats;
     if (v.skattemodus === 'tabell') {
       tabell = tolkTabell(v.tabellnummer);
-      const tabellSkatt = beregnSkatt({
-        personinntekt: uforeAar,
-        fradrag: tabell.fradrag,
-        tillegg: tabell.tillegg,
-        medTrygdeavgift: tabell.trygd,
-      });
       navMaaneder = tabell.maaneder;
-      navMaanedlig = tabellSkatt.total / navMaaneder;
+      navMaanedlig = tabelltrekk(v.tabellnummer, uforeMaaned);
     } else {
       navMaanedlig = uforeMaaned * sats;
     }
@@ -507,7 +466,11 @@ function uforeTrekk(
 
   const tolv = navMaaneder === 12;
   const navJuni = tolv ? navMaanedlig : 0;
-  const navDesember = tolv ? navMaanedlig : navMaanedlig / 2;
+  const navDesember = tolv
+    ? navMaanedlig
+    : tabell
+      ? Math.round(navMaanedlig / 2)
+      : navMaanedlig / 2;
 
   const lonnJuniBrutto = Math.max(0, maanedslonn - ferietrekk + feriepenger);
   const agVanlig = maanedslonn * arbeidsgiverSats;

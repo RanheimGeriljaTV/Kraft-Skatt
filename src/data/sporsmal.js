@@ -25,7 +25,7 @@ export const SPORSMAL = [
   },
   {
     sporsmal: 'Hvilket tabellnummer bør jeg ha på skattekortet?',
-    svar: 'Fra 2025 heter tabellene 8000–8400, der de tre siste sifrene er fradraget i tusen kroner (8050 betyr 50 000 kr). Kalkulatoren foreslår en tabell ut fra rentene og fradragene dine, og viser om du får restskatt eller penger tilbake.',
+    svar: 'Fra 2025 heter tabellene 8000–8400, der de tre siste sifrene er fradraget i tusen kroner (8050 betyr 50 000 kr). Kalkulatoren regner trekket slik Skatteetatens tabeller gjør, foreslår den tabellen som passer best med rentene og fradragene dine, og viser om du får restskatt eller penger tilbake.',
   },
   {
     sporsmal: 'Hvor mye kan jeg tjene ved siden av uføretrygd?',

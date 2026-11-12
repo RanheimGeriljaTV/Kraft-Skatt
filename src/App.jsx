@@ -74,8 +74,9 @@ export default function App() {
       <footer className="mx-auto max-w-7xl px-4 pb-8 text-xs leading-relaxed text-zinc-400 sm:px-6">
         <p>
           Beregningen er et estimat basert på skattesatsene for {AAR} for en enslig lønnsmottaker
-          bosatt utenfor Finnmark og Nord-Troms. Tabelltrekket er en forenkling av Skatteetatens
-          trekktabeller, og arbeidsgiveren din kan beregne ferietrekket litt annerledes.
+          bosatt utenfor Finnmark og Nord-Troms. Tabelltrekket er regnet etter Skatteetatens
+          trekkrutine for {AAR} for tabellene 8000–8400, 9010–9400, 7150, 7160 og 7170, og «Smart»
+          viser det ideelle trekket. Arbeidsgiveren din kan beregne ferietrekket litt annerledes.
           Uføreberegningen bruker reglene fra Nav for 2026 (bunnfradrag, fribeløp og
           reduksjonsprosent), men tar ikke med inntektstak, barnetillegg eller etteroppgjør. Bruk
           Skatteetatens og Navs egne tjenester for skattekortet og vedtaket ditt.

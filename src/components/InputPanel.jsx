@@ -11,12 +11,8 @@ import {
 } from 'lucide-react';
 import { Bryter, Glider, Hint, Hurtigknapper, Kort, Tallfelt, Valg } from './ui.jsx';
 import { kr, sats, tall } from '../utils/format.js';
-import {
-  alleTabeller,
-  konverterBelop,
-  tolkTabell,
-  SPESIALTABELLER,
-} from '../utils/taxCalculator.js';
+import { konverterBelop } from '../utils/taxCalculator.js';
+import { alleTabeller, tolkTabell, SPESIALTABELLER } from '../utils/trekktabell.js';
 import { FERIEAVTALER, SATSER } from '../utils/satser.js';
 
 const BASIS = {
@@ -472,6 +468,7 @@ function GjeldKort({ valg, oppdater, resultat }) {
 // ---------------------------------------------------------------------------
 function SkattKort({ valg, oppdater, resultat }) {
   const anbefalt = resultat.fradrag.anbefaltTabell;
+  const { anbefaling } = resultat;
   const uforeMedLonn = resultat.ufore.aktiv && resultat.lonn.arbeidsinntekt > 0;
   // Riktig bikort-prosent: marginalskatten på lønna når Nav trekker skatten på trygda.
   const anbefaltProsent = Math.ceil(resultat.fradrag.anbefaltBikort * 1000) / 10;
@@ -510,6 +507,12 @@ function SkattKort({ valg, oppdater, resultat }) {
               {resultat.ufore.aktiv ? ' hos Nav' : ''}.
             </p>
           )}
+          <p className="mt-1">
+            På lønnsslippen blir trekket{anbefaling.gjelderNav ? ' fra Nav' : ''} ca.{' '}
+            <strong className="text-white">{kr(anbefaling.tabellTrekk)}</strong> i måneden med
+            tabell {anbefalt}, mot {kr(anbefaling.idealTrekk)} i den ideelle beregningen. Tabellene
+            avrunder og bruker et lavere minstefradrag, så de treffer aldri helt.
+          </p>
           <button
             type="button"
             onClick={() =>
@@ -529,6 +532,24 @@ function SkattKort({ valg, oppdater, resultat }) {
 
       {valg.skattemodus === 'tabell' && (
         <TabellVelger valg={valg} oppdater={oppdater} anbefalt={anbefalt} />
+      )}
+
+      {valg.skattemodus === 'tabell' && (
+        <Infoboks
+          farge={
+            Math.abs(anbefaling.valgtTrekk - anbefaling.idealTrekk) < 100 ? 'emerald' : 'amber'
+          }
+        >
+          Tabell {valg.tabellnummer} trekker{' '}
+          <strong className="text-white">{kr(anbefaling.valgtTrekk)}</strong> i måneden
+          {anbefaling.gjelderNav ? ' fra Nav' : ''}. Det ideelle trekket for deg er{' '}
+          <strong className="text-white">{kr(anbefaling.idealTrekk)}</strong>
+          {Math.abs(anbefaling.valgtTrekk - anbefaling.idealTrekk) >= 1
+            ? `, så trekket er ${kr(Math.abs(anbefaling.valgtTrekk - anbefaling.idealTrekk))} ${
+                anbefaling.valgtTrekk > anbefaling.idealTrekk ? 'for høyt' : 'for lavt'
+              } per måned.`
+            : '.'}
+        </Infoboks>
       )}
 
       {valg.skattemodus === 'tabell' && uforeMedLonn && (

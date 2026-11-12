@@ -85,7 +85,8 @@ Alle satser ligger i [`src/utils/satser.js`](src/utils/satser.js), og selve moto
 | Reduksjon (uføre)           | Reduksjonsprosent (maks 70 %) av arbeidsinntekt over bunnfradraget                                              |
 
 Forenklinger: beregningen gjelder en enslig lønnstaker utenfor tiltakssonen, uten
-pensjonsinntekt. Tabelltrekket er en tilnærming til Skatteetatens trekktabeller. Feriepengene
+pensjonsinntekt. Tabelltrekket følger Skatteetatens trekkrutine (se under), men tar ikke med sjøfolk, Finnmark
+og petroleum. Feriepengene
 regnes av samme års lønn (stabil lønn år til år). Uføreberegningen tar ikke med inntektstak
 (80 % av inntekt før uførhet), barnetillegg eller etteroppgjør.
 
@@ -94,6 +95,33 @@ Kilder: [Skattesatser 2026 (regjeringen.no)](https://www.regjeringen.no/no/tema/
 [Regelendringer for uføretrygd i 2026 (Nav)](https://www.nav.no/regelendring-uforetrygd),
 [Uføretrygd og skatt (Skatteetaten)](https://www.skatteetaten.no/nn/person/skatt/hjelp-til-rett-skatt/arbeid-trygd-og-pensjon/pensjon-og-uforetrygd/uforetrygd/uforetrygd-og-skatt/)
 og [skattetrekk i juni og desember (Nav)](https://www.nav.no/skattetrekk).
+
+## Tabelltrekk
+
+Trekket i «Tabell» regnes ut etter Skatteetatens trekkrutine for 2026, i stedet for å slå opp i
+en tabellfil. Det gir samme trekk som på lønnsslippen, som er litt høyere enn årsskatten delt på
+10,5, fordi tabellene er bygget med andre forutsetninger enn skatteoppgjøret:
+
+1. Månedslønna rundes ned til hele 100 kr, og det legges til 50 kr.
+2. Beløpet ganges med 12,12 (8000- og 9000-tabellene) eller 12 (7150, 7160 og 7170) og blir
+   årsinntekten.
+3. Minstefradraget er 40,48 %, maks 84 216 kr (ved skatteoppgjøret 46 % og 95 700 kr).
+   Personfradraget (114 540 kr) og tabellens fradrag trekkes fra: 8050 gir 50 000 kr i fradrag,
+   og 9050 legger til 50 000 kr.
+4. Kommuneskatt (13,75 %), fellesskatt (8,25 %), trinnskatt og trygdeavgift rundes hver for seg.
+5. Summen deles på 10,5 trekkmåneder (12 for 7150 og 7160), og trekket kan ikke være større
+   enn utbetalingen.
+
+Feriepengene er trekkfrie i juni med 10,5-månederstabeller, og halvt trekk kommer i desember
+(arbeidsgiveren velger om det er november). 12-månederstabeller trekker også av feriepengene.
+«Smart» viser det ideelle trekket som gir null i restskatt, og appen foreslår den tabellen
+(8000–8400 eller 9010–9400) som kommer nærmest. Koden ligger i
+[`src/utils/trekktabell.js`](src/utils/trekktabell.js), og konstantene i `satser.js`.
+
+Fasit: tabell 8000 gir 2 713 / 8 366 / 14 184 / 25 585 / 49 478 kr i trekk ved 20 000 / 35 000 /
+50 000 / 75 000 / 120 000 kr i måneden. Verdiene kommer fra kodegjennomgangen i
+Kraft-Skatt#1, der de er sammenlignet med Skatteetatens tabellfil. 50 000 kr er også regnet for hånd i
+`trekktabell.test.js`.
 
 ## Utvikling
 
@@ -108,20 +136,21 @@ npm run build        # bygger til dist/
 
 ## Filer
 
-| Fil                                | Hva den gjør                                                       |
-| ---------------------------------- | ------------------------------------------------------------------ |
-| `src/utils/taxCalculator.js`       | Beregningsmotor (lønn, skatt, tabelltrekk, feriepenger)            |
-| `src/utils/satser.js`              | Alle skattesatser for inntektsåret                                 |
-| `src/hooks/useLagredeValg.js`      | Lagring i `localStorage` og nullstilling                           |
-| `src/components/PrivacyBanner.jsx` | Personvernboksen med nullstill-knapp                               |
-| `src/components/InputPanel.jsx`    | Steg A–D: lønn, uføretrygd, gjeld og fradrag, skattetrekk og ferie |
-| `src/components/SummaryCards.jsx`  | Fire nøkkelkort og fordelingsbar                                   |
-| `src/components/YearlyPayouts.jsx` | Årshjulet: vanlig måned, juni og desember                          |
-| `src/components/TaxBreakdown.jsx`  | Utregningen steg for steg                                          |
-| `src/components/MobileBar.jsx`     | Fast bunnlinje på mobil                                            |
-| `src/components/Sporsmal.jsx`      | «Spørsmål og svar» under kalkulatoren                              |
-| `src/data/sporsmal.js`             | Spørsmålene og svarene (felles for side og JSON-LD)                |
-| `src/data/seo.js`                  | JSON-LD og statisk innhold som skrives inn i index.html            |
+| Fil                                | Hva den gjør                                                           |
+| ---------------------------------- | ---------------------------------------------------------------------- |
+| `src/utils/taxCalculator.js`       | Beregningsmotor (lønn, skatt, trekk gjennom året, feriepenger)         |
+| `src/utils/trekktabell.js`         | Skatteetatens trekkrutine for tabell 8000–8400, 9010–9400 og 7150–7170 |
+| `src/utils/satser.js`              | Alle skattesatser for inntektsåret                                     |
+| `src/hooks/useLagredeValg.js`      | Lagring i `localStorage` og nullstilling                               |
+| `src/components/PrivacyBanner.jsx` | Personvernboksen med nullstill-knapp                                   |
+| `src/components/InputPanel.jsx`    | Steg A–D: lønn, uføretrygd, gjeld og fradrag, skattetrekk og ferie     |
+| `src/components/SummaryCards.jsx`  | Fire nøkkelkort og fordelingsbar                                       |
+| `src/components/YearlyPayouts.jsx` | Årshjulet: vanlig måned, juni og desember                              |
+| `src/components/TaxBreakdown.jsx`  | Utregningen steg for steg                                              |
+| `src/components/MobileBar.jsx`     | Fast bunnlinje på mobil                                                |
+| `src/components/Sporsmal.jsx`      | «Spørsmål og svar» under kalkulatoren                                  |
+| `src/data/sporsmal.js`             | Spørsmålene og svarene (felles for side og JSON-LD)                    |
+| `src/data/seo.js`                  | JSON-LD og statisk innhold som skrives inn i index.html                |
 
 ## Publisering
 
