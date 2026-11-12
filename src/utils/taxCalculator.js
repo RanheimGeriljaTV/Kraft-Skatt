@@ -258,7 +258,7 @@ export function anbefaltTabell(fradragEkvivalent) {
  * ferietimer (timelønn), feriepenger utbetalt i juni, og eventuell uføretrygd fra Nav
  * fordelt likt på 12 måneder.
  */
-export function beregn(innstillinger) {
+export function beregn(innstillinger, { utenRekursjon = false } = {}) {
   const v = { ...STANDARDVALG, ...innstillinger };
   const lonn = beregnJobb(v);
   const ufore = beregnUfore(v, lonn.personinntekt);
@@ -341,6 +341,16 @@ export function beregn(innstillinger) {
   }
 
   const oppgjor = trekk.sumAar - skatt.total; // positivt = penger tilbake
+  const vanligMaaned = trekk.vanligBrutto - trekk.vanlig;
+
+  // Hvor mye mer som faktisk utbetales i en vanlig måned på grunn av rentefradraget.
+  // Regnes som forskjellen mot samme situasjon uten gjeld, så det blir 0 med tabell- og
+  // prosenttrekk (trekket står fast), og riktig også med uføretrygd.
+  const rentebesparelseMaaned =
+    !utenRekursjon && renteutgifter > 0
+      ? vanligMaaned -
+        beregn({ ...innstillinger, gjeld: 0 }, { utenRekursjon: true }).netto.vanligMaaned
+      : 0;
   const nettoAar = personinntekt - skatt.total;
   const effektivSkatt = personinntekt > 0 ? skatt.total / personinntekt : 0;
 
@@ -363,6 +373,7 @@ export function beregn(innstillinger) {
       reisefradrag,
       bsuFradrag: skatt.bsuFradrag,
       rentebesparelse,
+      rentebesparelseMaaned,
       fradragsbesparelse,
       fradragEkvivalent,
       anbefaltTabell: anbefaltTabell(fradragEkvivalent),
@@ -381,7 +392,7 @@ export function beregn(innstillinger) {
     oppgjor,
     netto: {
       aar: nettoAar,
-      vanligMaaned: trekk.vanligBrutto - trekk.vanlig,
+      vanligMaaned,
       juni: trekk.juni.netto,
       desember: trekk.desember.netto,
       timelonn: lonn.timelonn * (1 - effektivSkatt),

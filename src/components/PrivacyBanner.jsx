@@ -14,7 +14,7 @@ export default function PrivacyBanner({ onNullstill, harLagret }) {
           <strong className="font-semibold text-emerald-300">100 % privat:</strong> Alle utregninger
           skjer kun i din egen nettleser. Ingen tall om lønn eller gjeld sendes til noen server.
           Dine valg huskes kun lokalt på din egen enhet.
-          <span className="mt-1 block font-mono text-[11px] uppercase tracking-widest text-zinc-500">
+          <span className="mt-1 block font-mono text-[11px] uppercase tracking-widest text-zinc-400">
             {harLagret ? 'Valgene dine er lagret på denne enheten' : 'Ingenting er lagret ennå'}
           </span>
         </p>

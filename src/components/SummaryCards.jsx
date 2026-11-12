@@ -26,7 +26,7 @@ function Nokkelkort({ ikon: Ikon, tittel, verdi, under, children, fremhevet }) {
 }
 
 const DELER = [
-  { nokkel: 'netto', navn: 'Netto', farge: 'bg-green-500', prikk: 'bg-green-500' },
+  { nokkel: 'netto', navn: 'Netto lønn', farge: 'bg-green-500', prikk: 'bg-green-500' },
   { nokkel: 'ferie', navn: 'Feriepenger', farge: 'bg-sky-400', prikk: 'bg-sky-400' },
   {
     nokkel: 'besparelse',
@@ -107,7 +107,9 @@ export default function SummaryCards({ resultat }) {
         >
           {besparelse > 0 && (
             <p className="mt-2 text-sm text-emerald-300">
-              Rentefradraget sparer deg {kr(besparelse / 12)} i skatt per måned.
+              {fradrag.rentebesparelseMaaned >= 1
+                ? `Rentefradraget gir deg ${kr(fradrag.rentebesparelseMaaned)} mer utbetalt i en vanlig måned (${kr(besparelse)} mindre skatt i året).`
+                : `Rentefradraget gir ${kr(besparelse)} mindre skatt i året. Det endrer ikke trekket du har nå.`}
             </p>
           )}
         </Nokkelkort>
@@ -119,7 +121,7 @@ export default function SummaryCards({ resultat }) {
             <span className="font-mono text-[11px] uppercase tracking-widest text-zinc-400">
               Fordeling av årsinntekten
             </span>
-            <span className="text-sm text-zinc-500 tabular-nums">{kr(brutto)}</span>
+            <span className="text-sm text-zinc-400 tabular-nums">{kr(brutto)}</span>
           </figcaption>
           <div
             className="flex h-5 w-full overflow-hidden rounded-full bg-zinc-800"
@@ -143,12 +145,19 @@ export default function SummaryCards({ resultat }) {
               <li key={d.nokkel} className="flex min-w-0 items-center gap-2">
                 <span aria-hidden="true" className={`size-2.5 shrink-0 rounded-full ${d.prikk}`} />
                 <span className="truncate text-zinc-300">{d.navn}</span>
-                <span className="ml-auto text-zinc-500 tabular-nums">
+                <span className="ml-auto text-zinc-400 tabular-nums">
                   {prosent(andeler[d.nokkel] / brutto, 0)}
                 </span>
               </li>
             ))}
           </ul>
+          <p className="mt-3 text-xs leading-relaxed text-zinc-400">
+            Du beholder <strong className="text-zinc-200">{prosent(netto.aar / brutto, 0)}</strong>{' '}
+            etter skatt, og skatten er{' '}
+            <strong className="text-zinc-200">{prosent(skatt.effektiv, 0)}</strong> (effektiv skatt{' '}
+            {prosent(skatt.effektiv)}). Feriepenger og rentefradraget er vist som egne deler, så
+            «Netto lønn» er det du får utenom dem.
+          </p>
         </figure>
       )}
     </section>

@@ -7,6 +7,39 @@ og prosjektet følger [Semantic Versioning](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-11-12
+
+Rettinger fra fase 1 i kodegjennomgangen og QA-runden
+([#1](https://github.com/RanheimGeriljaTV/Kraft-Skatt/issues/1) og
+[#2](https://github.com/RanheimGeriljaTV/Kraft-Skatt/issues/2)). Tabelltrekket (M1) og
+oppfølgerne kommer i senere versjoner.
+
+### Rettet
+
+- Tilgjengelighet: `aria-controls` på bryterne peker bare på panelet når det er åpent, så
+  axe ikke lenger melder `aria-valid-attr-value`.
+- Tilgjengelighet: grå hjelpetekst og etiketter er lysnet opp (`zinc-400`) og har nå god nok
+  kontrast (minst 4,5 : 1). Dekorative ikoner er uendret.
+- Tallfelt: `1.250.000` og `1,250,000` leses nå som 1 250 000. Ugyldig tekst (`1.5` i
+  årslønn, `0x10`, bokstaver) forkastes ikke lenger i stillhet: feltet får `aria-invalid`,
+  en melding forklarer hva som er galt og hvilken verdi beregningen fortsatt bruker, og
+  meldingen blir stående når fokus flyttes. Verdier utenfor området gir melding om høyeste
+  eller laveste verdi (for eksempel rente over 30 %).
+- Rentefradraget viser samme månedsbeløp i steg C og i resultatkortet. Tallet er forskjellen
+  i det som faktisk utbetales i en vanlig måned, så det er 0 med tabell- og prosenttrekk, der
+  trekket står fast. Kortet sier da hvor mye skatten er lavere i året.
+- Fordelingsbaren forklarer at feriepenger og rentefradrag er egne deler, og viser hvor mye
+  du beholder etter skatt, i samsvar med effektiv skatt.
+- Spørsmål og svar og årshjulet sier at arbeidsgiveren velger om det halve trekket kommer i
+  november eller desember.
+
+### Endret
+
+- Tester: trinn 5 i trinnskatten og hele skatten for 2,5 mill. kr er pinnet mot verdier regnet
+  for hånd, testen om tabell 8000 heter nå «penger tilbake», og tallinput og `aria-controls`
+  har egne tester.
+- README nevner Umami, som synk-skriptet på ranheimkraft.no legger inn.
+
 ## [1.3.0] - 2026-11-12
 
 ### Lagt til
@@ -84,7 +117,8 @@ og prosjektet følger [Semantic Versioning](https://semver.org/lang/no/).
 - Workflow som tester, bygger og publiserer til `build`-grenen og GitHub Pages.
 - Prosjektoppsett med arbeidsregler (`CLAUDE.md`), `.gitignore` og `.gitattributes`.
 
-[Unreleased]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.0.0...v1.1.0

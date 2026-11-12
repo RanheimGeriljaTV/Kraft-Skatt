@@ -10,7 +10,7 @@ export default function MobileBar({ resultat }) {
     >
       <div className="mx-auto flex max-w-xl items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-zinc-500">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-zinc-400">
             Netto utbetalt / mnd
           </p>
           <p className="font-syne text-xl font-extrabold text-accent tabular-nums">
@@ -18,7 +18,7 @@ export default function MobileBar({ resultat }) {
           </p>
         </div>
         <div className="text-right">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-zinc-500">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-zinc-400">
             Effektiv skatt
           </p>
           <p className="font-syne text-xl font-extrabold text-white tabular-nums">

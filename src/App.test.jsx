@@ -100,4 +100,71 @@ describe('App', () => {
       expect(screen.getByText(svar.replace(/\s+/g, ' '))).toBeInTheDocument();
     }
   });
+
+  describe('tallfelt', () => {
+    const skriv = (felt, tekst) => {
+      fireEvent.focus(felt);
+      fireEvent.change(felt, { target: { value: tekst } });
+    };
+    const aarslonn = () => {
+      render(<App />);
+      fireEvent.click(screen.getByRole('radio', { name: 'Årslønn' }));
+      return screen.getByLabelText('Årslønn', { selector: 'input' });
+    };
+
+    it('godtar punktum som tusenskille', () => {
+      const felt = aarslonn();
+      skriv(felt, '1.250.000');
+      expect(felt).not.toHaveAttribute('aria-invalid');
+      expect(lagret().belop).toBe(1_250_000);
+      fireEvent.blur(felt);
+      expect(vist(felt)).toBe('1 250 000');
+    });
+
+    it('sier fra når teksten ikke kan leses, og beholder forrige verdi', () => {
+      const felt = aarslonn();
+      skriv(felt, '1.5');
+      expect(felt).toHaveAttribute('aria-invalid', 'true');
+      const melding = screen.getByText(/Skriv hele tall uten desimaler/);
+      expect(melding.textContent).toMatch(/Beregningen bruker fortsatt 600\s000/);
+      expect(felt).toHaveAccessibleDescription(/Skriv hele tall/);
+      expect(lagret().belop).toBe(600_000);
+      // Meldingen blir stående etter at fokus forlater feltet, og feltet viser gyldig verdi.
+      fireEvent.blur(felt);
+      expect(vist(felt)).toBe('600 000');
+      expect(screen.getByText(/Skriv hele tall uten desimaler/)).toBeInTheDocument();
+      // ...og forsvinner når brukeren skriver et gyldig tall.
+      skriv(felt, '700000');
+      expect(screen.queryByText(/Skriv hele tall uten desimaler/)).not.toBeInTheDocument();
+      expect(felt).not.toHaveAttribute('aria-invalid');
+    });
+
+    it('forkaster ikke hex-tall i stillhet', () => {
+      const felt = aarslonn();
+      skriv(felt, '0x10');
+      expect(felt).toHaveAttribute('aria-invalid', 'true');
+      expect(lagret().belop).toBe(600_000);
+    });
+
+    it('melder når verdien klemmes til høyeste eller laveste verdi', () => {
+      render(<App />);
+      const rente = screen.getByLabelText('Gjennomsnittlig rente');
+      skriv(rente, '45');
+      expect(screen.getByText(/Høyeste verdi er 30 %/)).toBeInTheDocument();
+      expect(rente).not.toHaveAttribute('aria-invalid');
+      expect(lagret().rente).toBe(30);
+      skriv(rente, '-3');
+      expect(screen.getByText(/Laveste verdi er 0 %/)).toBeInTheDocument();
+    });
+  });
+
+  it('aria-controls peker bare på et panel som finnes', () => {
+    render(<App />);
+    const bryter = screen.getByRole('switch', { name: /Fagforeningskontingent/ });
+    expect(bryter).not.toHaveAttribute('aria-controls');
+    fireEvent.click(bryter);
+    const id = bryter.getAttribute('aria-controls');
+    expect(id).toBeTruthy();
+    expect(document.getElementById(id)).not.toBeNull();
+  });
 });

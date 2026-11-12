@@ -26,16 +26,16 @@ function Utbetaling({ ikon: Ikon, tittel, etikett, farge, netto, children, merkn
         </span>
         <div>
           <h3 className="font-syne font-bold text-white">{tittel}</h3>
-          <p className="font-mono text-[11px] uppercase tracking-widest text-zinc-500">{etikett}</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-zinc-400">{etikett}</p>
         </div>
       </header>
       <dl className="flex-1 divide-y divide-white/5">{children}</dl>
       <div className="mt-3 border-t border-white/10 pt-3">
-        <p className="font-mono text-[11px] uppercase tracking-widest text-zinc-500">
+        <p className="font-mono text-[11px] uppercase tracking-widest text-zinc-400">
           Netto utbetalt
         </p>
         <p className="font-syne text-2xl font-extrabold text-white tabular-nums">{kr(netto)}</p>
-        {merknad && <p className="mt-1 text-xs leading-relaxed text-zinc-500">{merknad}</p>}
+        {merknad && <p className="mt-1 text-xs leading-relaxed text-zinc-400">{merknad}</p>}
       </div>
     </article>
   );
@@ -61,7 +61,7 @@ function Forklaring({ trekk, ufore }) {
   if (trekk.tabell?.maaneder === 12) {
     return 'Tabellen din trekker skatt i alle 12 måneder, også i juni og fullt i desember.';
   }
-  return 'Skatten trekkes over 10,5 måneder: ikke trekk i juni og halv skatt i desember.';
+  return 'Skatten trekkes over 10,5 måneder: ikke trekk i juni og halv skatt i desember (arbeidsgiveren kan i stedet velge november).';
 }
 
 export default function YearlyPayouts({ resultat }) {
@@ -71,6 +71,7 @@ export default function YearlyPayouts({ resultat }) {
   const tolvMnd = ufore.aktiv ? trekk.navMaaneder === 12 : trekk.tabell?.maaneder === 12;
   const timelonnet = innstillinger.lonnstype === 'time';
   const harLonn = lonn.maanedslonn > 0;
+  const halvtTrekk = !tolvMnd && (ufore.aktiv || !prosentModus);
   const agSats = ufore.aktiv ? ` (${prosent(trekk.arbeidsgiverSats)})` : '';
 
   // Trekklinjer: med uføretrygd vises trekket fra Nav og fra arbeidsgiveren hver for seg.
@@ -174,6 +175,11 @@ export default function YearlyPayouts({ resultat }) {
           }
           farge="bg-amber-400/15 text-amber-300"
           netto={trekk.desember.netto}
+          merknad={
+            halvtTrekk
+              ? 'Arbeidsgiveren velger om det halve trekket kommer i november eller desember.'
+              : undefined
+          }
         >
           {harLonn && <Linje navn="Lønn" belop={lonn.maanedslonn} />}
           {ufore.aktiv && <Linje navn="Uføretrygd (Nav)" belop={ufore.maaned} />}

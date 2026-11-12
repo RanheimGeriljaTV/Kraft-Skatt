@@ -17,7 +17,7 @@ export const SPORSMAL = [
   },
   {
     sporsmal: 'Hva betyr halv skatt i desember?',
-    svar: 'Med tabelltrekk fordeles skatten på 10,5 måneder: ingen trekk i juni og halvt trekk i desember. Du betaler ikke mindre skatt totalt – den er bare fordelt på de andre månedene.',
+    svar: 'Med tabelltrekk fordeles skatten på 10,5 måneder: ingen trekk i juni og halvt trekk i desember (arbeidsgiveren velger om det halve trekket kommer i november eller desember). Du betaler ikke mindre skatt totalt – den er bare fordelt på de andre månedene.',
   },
   {
     sporsmal: 'Hvor mye sparer jeg i skatt på rentefradraget?',

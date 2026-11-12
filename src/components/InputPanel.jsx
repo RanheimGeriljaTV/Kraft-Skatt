@@ -369,8 +369,8 @@ function GjeldKort({ valg, oppdater, resultat }) {
         />
         gir deg <strong className="text-emerald-300">{kr(fradrag.rentebesparelse)}</strong> i
         redusert skatt per år ({sats(SATSER.skattAlminnelig)} rentefradrag)
-        {smart && fradrag.rentebesparelse > 0
-          ? `, altså ${kr(fradrag.rentebesparelse / 10.5)} mer utbetalt i måneden.`
+        {fradrag.rentebesparelseMaaned >= 1
+          ? `, altså ${kr(fradrag.rentebesparelseMaaned)} mer utbetalt i en vanlig måned.`
           : '.'}
       </Infoboks>
 

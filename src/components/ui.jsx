@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { tall, tolkTall } from '../utils/format.js';
+import { tall, tolkInput } from '../utils/format.js';
 
 export function Kort({ tittel, steg, ikon: Ikon, children, className = '' }) {
   const tittelId = useId();
@@ -17,7 +17,7 @@ export function Kort({ tittel, steg, ikon: Ikon, children, className = '' }) {
           )}
           <div className="min-w-0">
             {steg && (
-              <p className="font-mono text-[11px] uppercase tracking-widest text-zinc-500">
+              <p className="font-mono text-[11px] uppercase tracking-widest text-zinc-400">
                 {steg}
               </p>
             )}
@@ -45,7 +45,7 @@ export function Etikett({ children, htmlFor, id }) {
 }
 
 export function Hint({ children }) {
-  return <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">{children}</p>;
+  return <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">{children}</p>;
 }
 
 /** Faner / segmentert valg. */
@@ -79,7 +79,7 @@ export function Valg({ etikett, verdi, valg, onChange, kolonner, umami }) {
               {v.navn}
               {v.under && (
                 <span
-                  className={`block text-[11px] font-normal ${aktiv ? 'text-brand-dark/75' : 'text-zinc-500'}`}
+                  className={`block text-[11px] font-normal ${aktiv ? 'text-brand-dark/75' : 'text-zinc-400'}`}
                 >
                   {v.under}
                 </span>
@@ -107,28 +107,58 @@ export function Tallfelt({
   hint,
 }) {
   const id = useId();
+  const meldingId = useId();
   const [utkast, setUtkast] = useState(null);
+  // { feil: boolean, tekst: string } – vises under feltet, også etter at fokus er flyttet.
+  const [melding, setMelding] = useState(null);
   const vist = utkast ?? tall(verdi, desimaler);
+  const enhet = suffiks ? ` ${suffiks}` : '';
 
   const settVerdi = (tekst) => {
     setUtkast(tekst);
-    const n = tolkTall(tekst);
-    if (Number.isFinite(n)) onChange(Math.min(maks, Math.max(min, n)));
-    else if (tekst.trim() === '') onChange(min);
+    const r = tolkInput(tekst, { desimaler });
+    if (r.tom) {
+      setMelding(null);
+      onChange(min);
+    } else if (r.feil) {
+      // Ugyldig tekst: behold forrige verdi, men si tydelig fra om det.
+      setMelding({ feil: true, tekst: r.feil });
+    } else {
+      const klemt = Math.min(maks, Math.max(min, r.verdi));
+      setMelding(
+        klemt === r.verdi
+          ? null
+          : {
+              feil: false,
+              tekst:
+                r.verdi > maks
+                  ? `Høyeste verdi er ${tall(maks, desimaler)}${enhet}.`
+                  : `Laveste verdi er ${tall(min, desimaler)}${enhet}.`,
+            },
+      );
+      onChange(klemt);
+    }
   };
 
   return (
     <div>
       {etikett && <Etikett htmlFor={id}>{etikett}</Etikett>}
-      <div className="flex min-h-12 items-center rounded-xl border border-white/10 bg-black/30 focus-within:border-accent">
+      <div
+        className={`flex min-h-12 items-center rounded-xl border bg-black/30 focus-within:border-accent ${
+          melding?.feil ? 'border-amber-400/70' : 'border-white/10'
+        }`}
+      >
         <input
           id={id}
           type="text"
           inputMode={desimaler > 0 ? 'decimal' : 'numeric'}
           autoComplete="off"
           value={vist}
+          aria-invalid={melding?.feil ? true : undefined}
+          aria-describedby={meldingId}
           onChange={(e) => settVerdi(e.target.value)}
           onFocus={(e) => {
+            setMelding(null);
             setUtkast(verdi === 0 ? '' : tall(verdi, desimaler).replace(/\s/g, ''));
             requestAnimationFrame(() => e.target.select());
           }}
@@ -136,6 +166,16 @@ export function Tallfelt({
           className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-lg font-semibold text-white tabular-nums outline-none"
         />
         {suffiks && <span className="shrink-0 pr-3 text-sm text-zinc-400">{suffiks}</span>}
+      </div>
+      <div id={meldingId} role="status">
+        {melding && (
+          <p
+            className={`mt-1.5 text-xs leading-relaxed ${melding.feil ? 'text-amber-300' : 'text-zinc-300'}`}
+          >
+            {melding.tekst}
+            {melding.feil && ` Beregningen bruker fortsatt ${tall(verdi, desimaler)}${enhet}.`}
+          </p>
+        )}
       </div>
       {hint && <Hint>{hint}</Hint>}
     </div>
@@ -165,13 +205,13 @@ export function Bryter({ etikett, under, pa, onChange, children }) {
         type="button"
         role="switch"
         aria-checked={pa}
-        aria-controls={children ? id : undefined}
+        aria-controls={pa && children ? id : undefined}
         onClick={() => onChange(!pa)}
         className="flex min-h-12 w-full items-center justify-between gap-3 px-3 py-2 text-left"
       >
         <span className="min-w-0">
           <span className="block text-sm font-semibold text-zinc-100">{etikett}</span>
-          {under && <span className="block text-xs text-zinc-500">{under}</span>}
+          {under && <span className="block text-xs text-zinc-400">{under}</span>}
         </span>
         <span
           aria-hidden="true"

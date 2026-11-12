@@ -35,7 +35,9 @@ svar»:
 ## Personvern
 
 Alt regnes ut i nettleseren. Appen gjør ingen API-kall, og fontene ligger i bygget, så ingen
-tall om lønn eller gjeld forlater enheten. Valgene huskes i `localStorage` (nøkkel
+tall om lønn eller gjeld forlater enheten. På ranheimkraft.no legger synk-skriptet inn Umami
+(telling av sidevisninger). Knappene har `data-umami-event` som bare sier hvilket valg som ble
+tatt (for eksempel `skatt_modus_tabell`), aldri noen tall. Valgene huskes i `localStorage` (nøkkel
 `kraft-skatt:valg:v1`), men bare etter at brukeren har endret noe. «Slett lokale tall /
 Nullstill» tømmer lagringen og setter alle felter tilbake.
 

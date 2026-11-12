@@ -71,7 +71,7 @@ export default function App() {
         <Sporsmal />
       </main>
 
-      <footer className="mx-auto max-w-7xl px-4 pb-8 text-xs leading-relaxed text-zinc-500 sm:px-6">
+      <footer className="mx-auto max-w-7xl px-4 pb-8 text-xs leading-relaxed text-zinc-400 sm:px-6">
         <p>
           Beregningen er et estimat basert på skattesatsene for {AAR} for en enslig lønnsmottaker
           bosatt utenfor Finnmark og Nord-Troms. Tabelltrekket er en forenkling av Skatteetatens

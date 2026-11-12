@@ -54,6 +54,15 @@ describe('skattegrunnlag 2026', () => {
     expect(trinnskatt(1_000_000)).toBeCloseTo(ved1mill, 5);
   });
 
+  it('trinn 5 (17,8 % over 1 467 200 kr) er med: fasit for 2,5 mill. kr', () => {
+    // Regnet for hånd, trinn for trinn:
+    // 1 567,40 + 16 270,00 + 34 941,85 + 81 832,80 + 183 838,40
+    expect(trinnskatt(2_500_000)).toBeCloseTo(318_450.45, 2);
+    // Hele skatten: 22 % av (2 500 000 − 95 700 − 114 540) + 7,6 % trygdeavgift + trinnskatt
+    expect(beregnSkatt({ personinntekt: 2_500_000 }).total).toBeCloseTo(1_012_197.65, 2);
+    expect(trinnskatt(1_467_200) + 1_000 * 0.178).toBeCloseTo(trinnskatt(1_468_200), 5);
+  });
+
   it('formuesskatt er 1 % over 1,9 mill. og 1,1 % over 21,5 mill.', () => {
     expect(formuesskatt(1_900_000)).toBe(0);
     expect(formuesskatt(2_900_000)).toBeCloseTo(10_000, 5);
@@ -145,6 +154,27 @@ describe('hele året', () => {
     expect(r.fradrag.anbefaltTabell).toBe('8100');
   });
 
+  it('rentefradraget gir mer utbetalt i en vanlig måned bare i smart-modus', () => {
+    const smart = beregn({ ...grunn, gjeld: 2_000_000, rente: 5 });
+    expect(smart.fradrag.rentebesparelseMaaned).toBeCloseTo(22_000 / 10.5, 5);
+    for (const skattemodus of ['tabell', 'prosent']) {
+      const r = beregn({ ...grunn, gjeld: 2_000_000, rente: 5, skattemodus });
+      expect(r.fradrag.rentebesparelseMaaned).toBe(0);
+    }
+    expect(beregn(grunn).fradrag.rentebesparelseMaaned).toBe(0);
+  });
+
+  it('rentefradraget gir mer utbetalt i måneden også med uføretrygd (smart)', () => {
+    const ufor = { ufore: true, uforetrygd: 339_900, belop: 10_000, stilling: 30 };
+    const r = beregn({ ...ufor, gjeld: 2_000_000, rente: 5 });
+    const uten = beregn({ ...ufor, gjeld: 0 });
+    expect(r.fradrag.rentebesparelseMaaned).toBeCloseTo(
+      r.netto.vanligMaaned - uten.netto.vanligMaaned,
+      5,
+    );
+    expect(r.fradrag.rentebesparelseMaaned).toBeGreaterThan(0);
+  });
+
   it('fagforening er begrenset til 8 700 kr', () => {
     const r = beregn({ ...grunn, fagforening: 12_000 });
     expect(r.fradrag.fagforening).toBe(8_700);
@@ -155,7 +185,7 @@ describe('hele året', () => {
     expect(r.fradrag.reisefradrag).toBeCloseTo(60 * 200 * 1.9 - 12_000, 5);
   });
 
-  it('tabell 8000 gir restskatt for den som har store rentefradrag å hente', () => {
+  it('tabell 8000 gir penger tilbake ved skatteoppgjøret når rentefradraget er stort', () => {
     const r = beregn({ ...grunn, gjeld: 3_000_000, rente: 5, skattemodus: 'tabell' });
     expect(r.oppgjor).toBeGreaterThan(30_000); // penger tilbake
   });
