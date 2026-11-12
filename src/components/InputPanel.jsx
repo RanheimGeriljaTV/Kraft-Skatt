@@ -227,6 +227,10 @@ function UforeKort({ valg, oppdater, resultat }) {
             { verdi: '04g', navn: '0,4 G', under: 'første 24 måneder' },
           ]}
         />
+        <Hint>
+          1 G gjelder for hele 2026 (loven har virkning fra 1. januar). Nav regnet med 0,4 G til 1.
+          oktober og retter opp i etteroppgjøret i 2027, så trekket måned for måned kan avvike.
+        </Hint>
 
         <div className="grid grid-cols-2 gap-3">
           <Tallfelt
@@ -248,7 +252,8 @@ function UforeKort({ valg, oppdater, resultat }) {
         <Hint>
           Begge står i vedtaket. Inntekt etter uførhet (IEU) er 0 hvis du er 100 % ufør.
           Reduksjonsprosenten (tidligere kompensasjonsgrad) er maks {SATSER.uforeReduksjonMaks} %
-          fra 1. juli 2026.
+          fra 1. juli 2026. Står det mer i et eldre vedtak, bruker beregningen{' '}
+          {SATSER.uforeReduksjonMaks} % for hele året.
         </Hint>
 
         <Infoboks farge={ufore.reduksjon > 0 ? 'amber' : 'emerald'}>
@@ -601,12 +606,17 @@ function SkattKort({ valg, oppdater, resultat }) {
       <Valg
         etikett="Ferieavtale"
         verdi={valg.ferie}
-        kolonner={3}
+        kolonner={2}
         onChange={(ferie) => oppdater({ ferie })}
         valg={[
           { verdi: 'fem', navn: '5 uker', under: '12 % – vanligst' },
-          { verdi: 'lov', navn: '4 uker + 1 dag', under: '10,2 %' },
-          { verdi: 'over60', navn: 'Over 60 år', under: '+2,3 %' },
+          { verdi: 'lov', navn: '4 uker + 1 dag', under: '10,2 % – etter loven' },
+          { verdi: 'over60', navn: 'Over 60 år', under: '6 uker, 12 % + 2,3 %' },
+          {
+            verdi: 'lovOver60',
+            navn: 'Over 60, lovbestemt',
+            under: '5 uker + 1 dag, 10,2 % + 2,3 %',
+          },
         ]}
       />
       <Hint>{FERIEAVTALER[valg.ferie]?.navn}. Feriepengene utbetales i juni.</Hint>

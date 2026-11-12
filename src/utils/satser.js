@@ -90,11 +90,21 @@ export const FERIEAVTALER = {
     virkedager: 25,
     tilleggOver60: 0,
   },
+  // Over 60 år har rett til én ekstra ferieuke (6 virkedager) og 2,3 % ekstra feriepenger
+  // av grunnlag opptil 6 G. «over60» er 5 uker etter tariff + ekstrauka, «lovOver60» er
+  // lovens 4 uker og 1 dag + ekstrauka.
   over60: {
-    navn: 'Over 60 år (12 % + 2,3 %)',
+    navn: 'Over 60 år, 5 uker etter tariff (12 % + 2,3 %)',
     kort: '6 uker',
     sats: 0.12,
     virkedager: 36,
+    tilleggOver60: 0.023,
+  },
+  lovOver60: {
+    navn: 'Over 60 år, lovbestemt (10,2 % + 2,3 %)',
+    kort: '5 uker + 1 dag',
+    sats: 0.102,
+    virkedager: 31,
     tilleggOver60: 0.023,
   },
 };

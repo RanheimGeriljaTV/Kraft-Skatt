@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { tall, tolkInput } from '../utils/format.js';
 
 export function Kort({ tittel, steg, ikon: Ikon, children, className = '' }) {
@@ -51,6 +51,25 @@ export function Hint({ children }) {
 /** Faner / segmentert valg. */
 export function Valg({ etikett, verdi, valg, onChange, kolonner, umami }) {
   const id = useId();
+  const knapper = useRef([]);
+  // Som i WAI-ARIA-mønsteret for radiogrupper: bare valgt valg er et tab-stopp, og piltastene
+  // flytter fokus og valg. Er ingenting valgt, er første valg tab-stoppet.
+  const valgtIndeks = valg.findIndex((v) => v.verdi === verdi);
+  const tabIndeks = valgtIndeks >= 0 ? valgtIndeks : 0;
+
+  const flyttMedTaster = (e, fra) => {
+    const sist = valg.length - 1;
+    let til;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') til = fra === sist ? 0 : fra + 1;
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') til = fra === 0 ? sist : fra - 1;
+    else if (e.key === 'Home') til = 0;
+    else if (e.key === 'End') til = sist;
+    else return;
+    e.preventDefault();
+    onChange(valg[til].verdi);
+    knapper.current[til]?.focus();
+  };
+
   return (
     <div>
       {etikett && <Etikett id={id}>{etikett}</Etikett>}
@@ -60,15 +79,20 @@ export function Valg({ etikett, verdi, valg, onChange, kolonner, umami }) {
         className="grid gap-1 rounded-xl bg-black/30 p-1"
         style={{ gridTemplateColumns: `repeat(${kolonner ?? valg.length}, minmax(0, 1fr))` }}
       >
-        {valg.map((v) => {
+        {valg.map((v, indeks) => {
           const aktiv = v.verdi === verdi;
           return (
             <button
               key={v.verdi}
+              ref={(el) => {
+                knapper.current[indeks] = el;
+              }}
               type="button"
               role="radio"
               aria-checked={aktiv}
+              tabIndex={indeks === tabIndeks ? 0 : -1}
               onClick={() => onChange(v.verdi)}
+              onKeyDown={(e) => flyttMedTaster(e, indeks)}
               data-umami-event={umami ? `${umami}_${v.verdi}` : undefined}
               className={`min-h-11 rounded-lg px-2 py-1.5 text-center text-sm leading-tight font-semibold transition-colors ${
                 aktiv

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import App from './App.jsx';
 import { LAGRINGSNOKKEL } from './hooks/useLagredeValg.js';
 import { STANDARDVALG } from './utils/taxCalculator.js';
@@ -156,6 +156,71 @@ describe('App', () => {
       skriv(rente, '-3');
       expect(screen.getByText(/Laveste verdi er 0 %/)).toBeInTheDocument();
     });
+  });
+
+  it('lagrede verdier som ikke gir mening blir renset ved oppstart', () => {
+    localStorage.setItem(
+      LAGRINGSNOKKEL,
+      JSON.stringify({ ...STANDARDVALG, gjeld: 1e20, tabellnummer: '1234', skattemodus: 'tabell' }),
+    );
+    render(<App />);
+    expect(vist(screen.getByLabelText(/Total gjeld \(boliglån/))).toBe('100 000 000');
+    expect(screen.getByLabelText(/Tabellnummer fra skattekortet/)).toHaveValue('8000');
+    expect(screen.queryByRole('option', { name: /1234/ })).not.toBeInTheDocument();
+  });
+
+  describe('faner (radiogrupper)', () => {
+    const gruppe = () => screen.getByRole('radiogroup', { name: 'Jeg vet' });
+
+    it('bare valgt fane er et tab-stopp', () => {
+      render(<App />);
+      const radioer = within(gruppe()).getAllByRole('radio');
+      expect(radioer.map((r) => r.tabIndex)).toEqual([-1, 0, -1]);
+    });
+
+    it('piltastene flytter fokus og valg, med runding rundt', () => {
+      render(<App />);
+      const [time, maaned, aar] = within(gruppe()).getAllByRole('radio');
+      maaned.focus();
+      fireEvent.keyDown(maaned, { key: 'ArrowRight' });
+      expect(aar).toHaveAttribute('aria-checked', 'true');
+      expect(aar).toHaveFocus();
+      expect(lagret().lonnBasis).toBe('aar');
+      fireEvent.keyDown(aar, { key: 'ArrowRight' });
+      expect(time).toHaveAttribute('aria-checked', 'true');
+      expect(time).toHaveFocus();
+      fireEvent.keyDown(time, { key: 'ArrowLeft' });
+      expect(aar).toHaveFocus();
+      fireEvent.keyDown(aar, { key: 'Home' });
+      expect(time).toHaveFocus();
+      fireEvent.keyDown(time, { key: 'End' });
+      expect(aar).toHaveFocus();
+      expect(
+        within(gruppe())
+          .getAllByRole('radio')
+          .map((r) => r.tabIndex),
+      ).toEqual([-1, -1, 0]);
+    });
+
+    it('andre taster gjør ingenting', () => {
+      render(<App />);
+      const maaned = within(gruppe()).getByRole('radio', { name: 'Månedslønn' });
+      fireEvent.keyDown(maaned, { key: 'a' });
+      expect(maaned).toHaveAttribute('aria-checked', 'true');
+    });
+  });
+
+  it('mobilbunnlinjen er en region, ikke en live-region som leses opp ved hvert tastetrykk', () => {
+    render(<App />);
+    const bunnlinje = screen.getByRole('region', { name: 'Netto utbetalt og effektiv skatt' });
+    expect(bunnlinje).not.toHaveAttribute('aria-live');
+    expect(bunnlinje.closest('[aria-live]')).toBeNull();
+  });
+
+  it('ferieavtalen kan velges, også lovbestemt over 60 år', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('radio', { name: /Over 60, lovbestemt/ }));
+    expect(lagret().ferie).toBe('lovOver60');
   });
 
   it('aria-controls peker bare på et panel som finnes', () => {

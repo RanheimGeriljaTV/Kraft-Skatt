@@ -1,19 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { STANDARDVALG } from '../utils/taxCalculator.js';
+import { rensValg } from '../utils/valg.js';
 
 export const LAGRINGSNOKKEL = 'kraft-skatt:valg:v1';
 
-// Leser lagrede valg, men tar bare med kjente felt med riktig type.
+// Leser lagrede valg. Hvert felt sjekkes mot gyldige verdier (se rensValg).
 function lesLagret() {
   try {
     const raa = localStorage.getItem(LAGRINGSNOKKEL);
     if (!raa) return { valg: STANDARDVALG, fantes: false };
-    const data = JSON.parse(raa);
-    const valg = { ...STANDARDVALG };
-    for (const [nokkel, standard] of Object.entries(STANDARDVALG)) {
-      if (data && typeof data[nokkel] === typeof standard) valg[nokkel] = data[nokkel];
-    }
-    return { valg, fantes: true };
+    return { valg: rensValg(JSON.parse(raa)), fantes: true };
   } catch {
     return { valg: STANDARDVALG, fantes: false };
   }

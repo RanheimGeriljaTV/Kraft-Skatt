@@ -52,13 +52,18 @@ export function aarslonnFraBelop(belop, basis, stilling = 100, arbeidsuke = '37.
   return b * 12;
 }
 
-/** Gjør om beløpet fra én fane til en annen uten å endre årslønna. */
+/**
+ * Gjør om beløpet fra én fane til en annen uten å endre årslønna. Beløpet rundes ikke av til
+ * hele kroner eller øre (bare vekk fra flyttallsstøy etter 12 siffer), så det ikke driver når man bytter fane
+ * frem og tilbake. Feltene viser det avrundet.
+ */
 export function konverterBelop(belop, fra, til, stilling = 100, arbeidsuke = '37.5') {
   const aar = aarslonnFraBelop(belop, fra, stilling, arbeidsuke);
   const timer = uke(arbeidsuke).timerAar * (tall(stilling, 0, 100) / 100);
-  if (til === 'time') return timer > 0 ? Math.round((aar / timer) * 100) / 100 : 0;
-  if (til === 'aar') return Math.round(aar);
-  return Math.round(aar / 12);
+  const uten = (x) => Number(x.toPrecision(12)); // bort med flyttallsstøy, men ikke mer
+  if (til === 'time') return timer > 0 ? uten(aar / timer) : 0;
+  if (til === 'aar') return uten(aar);
+  return uten(aar / 12);
 }
 
 /** Lønn og feriepenger for ett år med stabil lønn. */

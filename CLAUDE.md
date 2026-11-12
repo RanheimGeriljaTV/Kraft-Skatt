@@ -78,6 +78,7 @@ Målet er å vinne presise søk folk faktisk skriver (f.eks. «stekeovn til airf
 - `gh` er autentisert som **`RanheimGeriljaTV`**. Kjør alle `gh`-kommandoer ikke-interaktivt med parametere.
 - Bruk [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `chore:`. Ta med versjonen når en ny slippes, f.eks. `feat: nedtellingsklokke (v1.2.0)`.
 - Kontroller alltid `git status` før commit.
+- Handlingene i `.github/workflows/deploy.yml` er låst på commit-SHA. Oppdater dem med SHA, ikke tag.
 - Linjeskift er LF (`.gitattributes`). Bilder og fonter er merket som binære.
 
 ## 6. Skattesatser

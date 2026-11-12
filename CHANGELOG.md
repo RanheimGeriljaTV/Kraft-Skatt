@@ -7,6 +7,41 @@ og prosjektet følger [Semantic Versioning](https://semver.org/lang/no/).
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-12
+
+Fase 3 fra kodegjennomgangen og QA-runden
+([#1](https://github.com/RanheimGeriljaTV/Kraft-Skatt/issues/1) og
+[#2](https://github.com/RanheimGeriljaTV/Kraft-Skatt/issues/2)): oppfølgerne L4, L5, L7 og L8.
+
+### Lagt til
+
+- Ferieavtalen «Over 60, lovbestemt»: 4 uker og 1 dag pluss ekstrauka (31 virkedager), 10,2 %
+  - 2,3 % feriepenger. «Over 60 år» heter nå tydeligere 5 uker etter tariff (6 uker, 12 % +
+    2,3 %).
+- Piltaster, Home og End i alle faner (radiogrupper). Bare valgt fane er tab-stopp, som i
+  WAI-ARIA-mønsteret.
+- `src/utils/valg.js` som renser lagrede valg, med tester.
+
+### Rettet
+
+- Lagrede valg sjekkes nå mot gyldige verdier og området i skjemaet. Gjeld på `1e20` gir ikke
+  lenger «100 000 000 000 000 000 000 kr», og ukjente tabellnummer, valg og tekst i tallfelt
+  får standardverdi.
+- Bytte mellom timelønn, månedslønn og årslønn avrunder ikke lenger beløpet, så det ikke driver
+  når man bytter frem og tilbake (600 000 kr ble 599 994 kr).
+- Mobilbunnlinjen leses ikke lenger opp ved hvert tastetrykk i lønnsfeltet. Den er nå en
+  region uten `aria-live`.
+- Uføretekster: det står tydelig at reduksjonsprosenten maks er 70 % for hele året i
+  beregningen, og at 1 G-fribeløpet gjelder for hele 2026 selv om Nav regnet med 0,4 G til
+  oktober.
+
+### Endret
+
+- Handlingene i workflowen er låst på commit-SHA i stedet for tag.
+- `npm audit` er nede på 0 sårbarheter: `package.json` tvinger `minimatch` til 11.x
+  ([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)) via `overrides`.
+  Dette gjaldt bare utviklingsverktøyene, ikke det som publiseres.
+
 ## [1.4.0] - 2026-11-12
 
 Retter [#1](https://github.com/RanheimGeriljaTV/Kraft-Skatt/issues/1) M1 og
@@ -149,7 +184,8 @@ oppfølgerne kommer i senere versjoner.
 - Workflow som tester, bygger og publiserer til `build`-grenen og GitHub Pages.
 - Prosjektoppsett med arbeidsregler (`CLAUDE.md`), `.gitignore` og `.gitattributes`.
 
-[Unreleased]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/RanheimGeriljaTV/Kraft-Skatt/compare/v1.2.0...v1.3.0

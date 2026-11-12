@@ -24,6 +24,30 @@ describe('lønn', () => {
     expect(aarslonnFraBelop(300, 'time', 50, '37.5')).toBe(292_500);
   });
 
+  it('bytte av fane frem og tilbake gir tilbake samme beløp (ingen avrundingsdrift)', () => {
+    for (const stilling of [100, 80, 30, 37.5]) {
+      for (const uke of ['37.5', '35.5']) {
+        for (const [start, fra] of [
+          [600_000, 'aar'],
+          [1_234_567, 'aar'],
+          [50_000, 'maaned'],
+          [41_234, 'maaned'],
+          [307.69, 'time'],
+          [250, 'time'],
+        ]) {
+          for (const via of ['time', 'maaned', 'aar']) {
+            const dit = konverterBelop(start, fra, via, stilling, uke);
+            const tilbake = konverterBelop(dit, via, fra, stilling, uke);
+            expect(tilbake).toBeCloseTo(start, 4);
+          }
+        }
+      }
+    }
+    // Eksempelet fra gjennomgangen: 600 000 → timelønn → 599 994 før.
+    const time = konverterBelop(600_000, 'aar', 'time', 100, '37.5');
+    expect(konverterBelop(time, 'time', 'aar', 100, '37.5')).toBeCloseTo(600_000, 4);
+  });
+
   it('konverterer mellom faner uten å endre årslønna', () => {
     expect(konverterBelop(600_000, 'aar', 'maaned')).toBe(50_000);
     expect(konverterBelop(50_000, 'maaned', 'time', 100, '37.5')).toBeCloseTo(307.69, 2);
@@ -191,6 +215,17 @@ describe('hele året', () => {
   it('frikort gir null trekk under grensen', () => {
     const r = beregn({ lonnBasis: 'aar', belop: 80_000, skattemodus: 'prosent', frikort: true });
     expect(r.trekk.sumAar).toBe(0);
+  });
+
+  it('lovbestemt ferie over 60 år: 31 virkedager, 10,2 % + 2,3 % av grunnlag opp til 6 G', () => {
+    const r = beregn({ ...grunn, ferie: 'lovOver60' });
+    expect(r.lonn.ferietrekk).toBeCloseTo((31 / 26) * 50_000, 5);
+    const grunnlag = 600_000 - r.lonn.ferietrekk;
+    expect(r.lonn.feriepenger).toBeCloseTo(grunnlag * 0.102 + grunnlag * 0.023, 5);
+    // Med 5 uker etter tariff (6 uker totalt) er trekket 36/26 og satsen 12 % + 2,3 %.
+    const tariff = beregn({ ...grunn, ferie: 'over60' });
+    expect(tariff.lonn.ferietrekk).toBeCloseTo((36 / 26) * 50_000, 5);
+    expect(tariff.lonn.feriepenger / (600_000 - tariff.lonn.ferietrekk)).toBeCloseTo(0.143, 5);
   });
 
   it('over 60 år gir 2,3 % ekstra, men bare av grunnlag opp til 6 G', () => {

@@ -55,7 +55,9 @@ Nullstill» tømmer lagringen og setter alle felter tilbake.
 - **Skattetrekk:** smart beregning med anbefalt tabell, tabelltrekk (8000–8400, 9010–9400,
   7150/7160/7170) eller prosenttrekk med frikort. Viser forventet restskatt eller penger
   tilbake når trekket ikke stemmer med den faktiske skatten.
-- **Ferie:** 5 uker (12 %), 4 uker + 1 dag (10,2 %) eller over 60 år (+2,3 % opptil 6 G).
+- **Ferie:** 5 uker (12 %), 4 uker + 1 dag (10,2 %), over 60 år med 5 uker etter tariff (6 uker,
+  12 % + 2,3 %) eller over 60 år etter loven (5 uker + 1 dag, 10,2 % + 2,3 %). De 2,3 % gjelder
+  grunnlag opptil 6 G.
 - **Resultat:** fire nøkkelkort, fordelingsbar, årshjul (vanlig måned, juni og desember) og
   en detaljert utregning.
 - **Mobil:** stablet oppsett med fast bunnlinje som viser netto per måned og effektiv skatt.
@@ -142,6 +144,7 @@ npm run build        # bygger til dist/
 | `src/utils/trekktabell.js`         | Skatteetatens trekkrutine for tabell 8000–8400, 9010–9400 og 7150–7170 |
 | `src/utils/satser.js`              | Alle skattesatser for inntektsåret                                     |
 | `src/hooks/useLagredeValg.js`      | Lagring i `localStorage` og nullstilling                               |
+| `src/utils/valg.js`                | Renser lagrede valg: gyldige verdier og tall innenfor området          |
 | `src/components/PrivacyBanner.jsx` | Personvernboksen med nullstill-knapp                                   |
 | `src/components/InputPanel.jsx`    | Steg A–D: lønn, uføretrygd, gjeld og fradrag, skattetrekk og ferie     |
 | `src/components/SummaryCards.jsx`  | Fire nøkkelkort og fordelingsbar                                       |
@@ -161,3 +164,10 @@ lint, tester og bygg på hver push til `main`. Deretter:
 - publiseres samme bygg på GitHub Pages som forhåndsvisning.
 
 `vite.config.js` bruker `base: './'`, så bygget virker på begge adressene.
+
+Handlingene i workflowen er låst på commit-SHA (med tag i kommentaren). Slå opp ny SHA med
+`gh api repos/<eier>/<repo>/commits/<tag> --jq .sha` når du oppdaterer dem.
+
+`package.json` har en `overrides` som tvinger `minimatch` til 11.x
+([GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)), fordi ESLint 10 ennå
+henter 10.x. Fjern den når ESLint har oppdatert. `npm audit` skal vise 0 sårbarheter.
